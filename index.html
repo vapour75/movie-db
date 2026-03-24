@@ -7,46 +7,51 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, sans-serif; background: #f5f7fb; padding: 16px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f7fb; padding: 16px; }
         .header { margin-bottom: 20px; }
         .header h1 { font-size: 24px; }
-        .stats { display: flex; gap: 12px; margin-bottom: 20px; }
-        .stat-card { background: white; border-radius: 12px; padding: 12px; flex: 1; text-align: center; }
+        .stats { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+        .stat-card { background: white; border-radius: 12px; padding: 12px; flex: 1; min-width: 70px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .stat-number { font-size: 24px; font-weight: bold; }
         .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-        .filter-group { background: white; padding: 6px 12px; border-radius: 20px; border: 1px solid #ddd; }
-        .filter-group select { border: none; background: none; }
+        .filter-group { background: white; padding: 6px 12px; border-radius: 20px; border: 1px solid #ddd; display: flex; align-items: center; gap: 8px; }
+        .filter-group select { border: none; background: none; font-size: 14px; }
         .reset-btn { background: #e2e8f0; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; }
-        .table-wrapper { overflow-x: auto; background: white; border-radius: 16px; }
+        .table-wrapper { overflow-x: auto; background: white; border-radius: 16px; border: 1px solid #edf2f7; }
         .project-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1000px; }
-        .project-table th, .project-table td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #eee; }
+        .project-table th { background: #f8fafc; padding: 12px 8px; text-align: left; font-weight: 600; border-bottom: 1px solid #e2e8f0; }
+        .project-table td { padding: 12px 8px; border-bottom: 1px solid #f1f5f9; }
         .project-table tr { cursor: pointer; }
-        .level-badge { padding: 2px 8px; border-radius: 12px; font-size: 11px; }
+        .project-table tr:hover { background: #f8fafc; }
+        .level-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
         .level-S { background: #fef3c7; color: #b45309; }
         .level-A { background: #dbeafe; color: #1e40af; }
         .level-Aplus { background: #dcfce7; color: #166534; }
-        .status-badge { padding: 2px 8px; border-radius: 12px; font-size: 10px; }
-        .status-yibochu { background: #e0e7ff; color: #3730a3; }
-        .fab { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; background: #1e293b; color: white; border-radius: 25px; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; border: none; }
+        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 10px; background: #e0e7ff; color: #3730a3; }
+        .fab { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; background: #1e293b; color: white; border-radius: 25px; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; justify-content: center; visibility: hidden; opacity: 0; transition: 0.2s; z-index: 200; }
         .modal-overlay.active { visibility: visible; opacity: 1; }
         .modal-drawer { background: white; width: 100%; max-width: 600px; border-radius: 20px 20px 0 0; max-height: 80vh; overflow-y: auto; padding: 20px; transform: translateY(100%); transition: transform 0.3s; }
         .modal-overlay.active .modal-drawer { transform: translateY(0); }
         .form-group { margin-bottom: 12px; }
-        .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px; }
+        .form-group label { display: block; font-size: 12px; margin-bottom: 4px; color: #334155; }
+        .form-group input, .form-group select { width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; }
         .form-row { display: flex; gap: 12px; }
         .form-row .form-group { flex: 1; }
-        .btn-submit { background: #1e293b; color: white; border: none; width: 100%; padding: 12px; border-radius: 40px; margin-top: 12px; cursor: pointer; }
+        .btn-submit { background: #1e293b; color: white; border: none; width: 100%; padding: 12px; border-radius: 40px; font-size: 16px; font-weight: 600; margin-top: 12px; cursor: pointer; }
+        .btn-edit { background: #3b82f6; }
+        .btn-delete { background: #ef4444; }
         .button-group { display: flex; gap: 12px; margin-top: 16px; }
         .button-group button { flex: 1; }
         .loading { text-align: center; padding: 40px; color: #64748b; }
         .detail-block { background: #f8fafc; padding: 12px; border-radius: 12px; margin-bottom: 12px; }
+        footer { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 16px; }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <h1>🎬 影视项目数据库</h1>
+        <h1>影视项目数据库</h1>
         <p>多人共享 · 实时同步</p>
     </div>
     <div class="stats" id="statsContainer"></div>
@@ -58,10 +63,10 @@
     <div class="table-wrapper">
         <table class="project-table">
             <thead><tr><th>剧目名称</th><th>级别</th><th>类型</th><th>集数</th><th>开机</th><th>播出日期</th><th>导演</th><th>编剧</th><th>主演</th><th>状态</th>?</thead>
-            <tbody id="tableBody">发展<td colspan="10" class="loading">加载数据中...发展发展</tbody>
-        划
+            <tbody id="tableBody"><tr><td colspan="10" class="loading">加载数据中...</td></tr></tbody>
+        ?</table>
     </div>
-    <footer style="text-align:center; font-size:11px; margin-top:16px;">点击行查看详情 · 右下角+号添加</footer>
+    <footer>点击行查看详情 · 右下角+号添加</footer>
 </div>
 <button class="fab" id="addBtn">+</button>
 
@@ -84,78 +89,115 @@
     <div class="modal-drawer">
         <div style="display:flex; justify-content:space-between;"><span style="font-size:18px; font-weight:bold;">项目详情</span><button id="closeDetailBtn" style="background:none; border:none; font-size:24px;">×</button></div>
         <div id="detailContent"></div>
-        <div class="button-group"><button class="btn-submit" id="editDetailBtn" style="background:#3b82f6;">编辑</button><button class="btn-submit" id="deleteDetailBtn" style="background:#ef4444;">删除</button></div>
+        <div class="button-group"><button class="btn-submit btn-edit" id="editDetailBtn">编辑</button><button class="btn-submit btn-delete" id="deleteDetailBtn">删除</button></div>
     </div>
 </div>
 
 <script>
-    // 配置 - 只有一次
-    const URL = "https://kcggqsgsgkmpuydrytcx.supabase.co";
-    const KEY = "sb_publishable__TF7TumQQ-kpNdN-WF64DA_EjcsI0nn";
+    // Supabase 配置
+    const MY_URL = "https://kcggqsgsgkmpuydrytcx.supabase.co";
+    const MY_KEY = "sb_publishable__TF7TumQQ-kpNdN-WF64DA_EjcsI0nn";
     
     // 创建客户端
-    const db = supabase.createClient(URL, KEY);
+    const client = supabase.createClient(MY_URL, MY_KEY);
     
     let projects = [];
-    let editId = null;
-    let levelFilter = "all";
-    let statusFilter = "all";
+    let currentId = null;
+    let levelVal = "all";
+    let statusVal = "all";
 
-    function escape(s) { if(!s) return ''; return s.replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':m==='>'?'&gt;':m); }
-    function getStatus(p) { if(p.air_date) return "已播出"; if(p.end_date) return "已杀青"; if(p.start_date) return "已开机"; return "待开机"; }
+    function h(s) { if(!s) return ''; return s.replace(/[&<>]/g, function(m){ return m==='&'?'&amp;':m==='<'?'&lt;':m==='>'?'&gt;':m;}); }
+    function getStatus(p) { if(p.air_date && p.air_date !== "") return "已播出"; if(p.end_date && p.end_date !== "") return "已杀青"; if(p.start_date && p.start_date !== "") return "已开机"; return "待开机"; }
     function getLevelClass(l) { if(l==="S") return "level-S"; if(l==="A+") return "level-Aplus"; if(l==="A") return "level-A"; return ""; }
 
     async function load() {
-        document.getElementById("tableBody").innerHTML = '发展<td colspan="10" class="loading">加载中...发展发展';
-        let { data, error } = await db.from("projects").select("*").order("id", {ascending: false});
-        if(error) { document.getElementById("tableBody").innerHTML = '发展<td colspan="10">加载失败发展发展'; return; }
-        projects = data;
+        document.getElementById("tableBody").innerHTML = '<tr><td colspan="10" class="loading">加载数据中...</td></tr>';
+        let { data, error } = await client.from("projects").select("*").order("id", { ascending: false });
+        if(error) {
+            document.getElementById("tableBody").innerHTML = '<tr><td colspan="10" class="loading">加载失败: ' + error.message + '</td></tr>';
+            return;
+        }
+        projects = data || [];
+        
+        // 统计
         let total = projects.length, kaiji=0, shaqing=0, yibochu=0;
-        for(let p of projects) { let s=getStatus(p); if(s==="已播出") yibochu++; else if(s==="已杀青") shaqing++; else if(s==="已开机") kaiji++; }
+        for(let p of projects) { let s = getStatus(p); if(s==="已播出") yibochu++; else if(s==="已杀青") shaqing++; else if(s==="已开机") kaiji++; }
         document.getElementById("statsContainer").innerHTML = '<div class="stat-card"><div class="stat-number">'+total+'</div><div>总项目</div></div><div class="stat-card"><div class="stat-number">'+kaiji+'</div><div>已开机</div></div><div class="stat-card"><div class="stat-number">'+shaqing+'</div><div>已杀青</div></div><div class="stat-card"><div class="stat-number">'+yibochu+'</div><div>已播出</div></div>';
         
+        // 筛选
         let filtered = projects.filter(p => {
-            if(levelFilter!=="all" && p.level!==levelFilter) return false;
-            if(statusFilter!=="all") { let s=getStatus(p); if(s!==statusFilter) return false; }
+            if(levelVal !== "all" && p.level !== levelVal) return false;
+            if(statusVal !== "all") { let s = getStatus(p); if(s !== statusVal) return false; }
             return true;
         });
-        if(filtered.length===0) { document.getElementById("tableBody").innerHTML = '发展<td colspan="10">暂无数据发展发展'; return; }
+        
+        if(filtered.length === 0) {
+            document.getElementById("tableBody").innerHTML = '<tr><td colspan="10" class="loading">暂无数据</td></tr>';
+            return;
+        }
+        
         let html = "";
         for(let p of filtered) {
-            let actors = [p.male1, p.female1].filter(x=>x).join(" / ");
-            html += `<tr data-id="${p.id}"><td>${escape(p.name)}<td><span class="level-badge ${getLevelClass(p.level)}">${p.level}级</span><td>${escape(p.type||"-")}<td>${escape(p.episodes||"-")}<td>${p.start_date||"-"}<td>${p.air_date||"-"}<td>${escape(p.director||"-")}<td>${escape(p.writer||"-")}<td>${escape(actors)}<td><span class="status-badge">${getStatus(p)}</span>发展`;
+            let actors = [p.male1, p.female1].filter(x=>x && x!=="").join(" / ");
+            if(!actors) actors = "-";
+            html += '<tr data-id="' + p.id + '">';
+            html += '<td style="font-weight:500;">' + h(p.name) + '发展';
+            html += '|<span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span>发展';
+            html += '|' + h(p.type || "-") + '发展';
+            html += '|' + h(p.episodes || "-") + '发展';
+            html += '|' + (p.start_date || "-") + '发展';
+            html += '|' + (p.air_date || "-") + '发展';
+            html += '|' + h(p.director || "-") + '发展';
+            html += '|' + h(p.writer || "-") + '发展';
+            html += '|' + h(actors) + '发展';
+            html += '|<span class="status-badge">' + getStatus(p) + '</span>发展';
+            html += '发展';
         }
         document.getElementById("tableBody").innerHTML = html;
-        document.querySelectorAll("#tableBody tr").forEach(r => { r.onclick = () => { let id = parseInt(r.dataset.id); let p = projects.find(x=>x.id===id); if(p) showDetail(p); }; });
+        
+        // 点击事件
+        document.querySelectorAll("#tableBody tr").forEach(row => {
+            row.onclick = () => {
+                let id = parseInt(row.getAttribute("data-id"));
+                let p = projects.find(x => x.id === id);
+                if(p) showDetail(p);
+            };
+        });
     }
     
     function showDetail(p) {
-        document.getElementById("detailContent").innerHTML = `<div class="detail-block"><h3>${escape(p.name)}</h3><div><span class="level-badge ${getLevelClass(p.level)}">${p.level}级</span> <span class="status-badge">${getStatus(p)}</span></div></div><div class="detail-block"><strong>类型/集数</strong> ${escape(p.type||"-")} / ${p.episodes||"-"}<br><strong>开机/杀青/播出</strong> ${p.start_date||"-"} / ${p.end_date||"-"} / ${p.air_date||"-"}</div><div class="detail-block"><strong>导演/编剧</strong> ${escape(p.director||"-")} / ${escape(p.writer||"-")}<br><strong>主演</strong> ${p.male1||"-"} ${p.female1?"/ "+p.female1:""}</div><div class="detail-block"><strong>出品/制作</strong> ${escape(p.studio||"-")}<br><strong>豆瓣评分</strong> ${p.rating||"-"}</div>`;
+        let actors = [p.male1, p.female1].filter(x=>x && x!=="").join(" / ");
+        let detail = '<div class="detail-block"><h3>' + h(p.name) + '</h3><div><span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span> <span class="status-badge">' + getStatus(p) + '</span></div></div>';
+        detail += '<div class="detail-block"><strong>类型/集数</strong> ' + h(p.type||"-") + ' / ' + (p.episodes||"-") + '<br><strong>开机/杀青/播出</strong> ' + (p.start_date||"-") + ' / ' + (p.end_date||"-") + ' / ' + (p.air_date||"-") + '</div>';
+        detail += '<div class="detail-block"><strong>导演/编剧</strong> ' + h(p.director||"-") + ' / ' + h(p.writer||"-") + '<br><strong>主演</strong> ' + (actors || "-") + '</div>';
+        detail += '<div class="detail-block"><strong>出品/制作</strong> ' + h(p.studio||"-") + '<br><strong>豆瓣评分</strong> ' + (p.rating||"-") + '</div>';
+        document.getElementById("detailContent").innerHTML = detail;
         document.getElementById("editDetailBtn").onclick = () => { closeDetail(); openEdit(p.id); };
-        document.getElementById("deleteDetailBtn").onclick = () => { if(confirm("删除？")) deleteItem(p.id); };
+        document.getElementById("deleteDetailBtn").onclick = () => { if(confirm("删除《" + p.name + "》？")) deleteItem(p.id); };
         document.getElementById("detailModal").classList.add("active");
     }
+    
     function closeDetail() { document.getElementById("detailModal").classList.remove("active"); }
     
     function openEdit(id) {
-        editId = id;
-        document.getElementById("modalTitle").innerText = id ? "编辑" : "添加";
+        currentId = id;
+        document.getElementById("modalTitle").innerText = id ? "编辑项目" : "添加项目";
         if(id) {
-            let p = projects.find(x=>x.id===id);
+            let p = projects.find(x => x.id === id);
             if(p) {
                 document.getElementById("projName").value = p.name;
                 document.getElementById("projLevel").value = p.level;
-                document.getElementById("projType").value = p.type||"";
-                document.getElementById("projEpisodes").value = p.episodes||"";
-                document.getElementById("projStart").value = p.start_date||"";
-                document.getElementById("projEnd").value = p.end_date||"";
-                document.getElementById("projAirDate").value = p.air_date||"";
-                document.getElementById("projDirector").value = p.director||"";
-                document.getElementById("projWriter").value = p.writer||"";
-                document.getElementById("projMale1").value = p.male1||"";
-                document.getElementById("projFemale1").value = p.female1||"";
-                document.getElementById("projStudio").value = p.studio||"";
-                document.getElementById("projRating").value = p.rating||"";
+                document.getElementById("projType").value = p.type || "";
+                document.getElementById("projEpisodes").value = p.episodes || "";
+                document.getElementById("projStart").value = p.start_date || "";
+                document.getElementById("projEnd").value = p.end_date || "";
+                document.getElementById("projAirDate").value = p.air_date || "";
+                document.getElementById("projDirector").value = p.director || "";
+                document.getElementById("projWriter").value = p.writer || "";
+                document.getElementById("projMale1").value = p.male1 || "";
+                document.getElementById("projFemale1").value = p.female1 || "";
+                document.getElementById("projStudio").value = p.studio || "";
+                document.getElementById("projRating").value = p.rating || "";
             }
         } else {
             document.getElementById("projName").value = "";
@@ -174,11 +216,12 @@
         }
         document.getElementById("editModal").classList.add("active");
     }
-    function closeEdit() { document.getElementById("editModal").classList.remove("active"); editId=null; }
+    
+    function closeEdit() { document.getElementById("editModal").classList.remove("active"); currentId = null; }
     
     async function save() {
         let name = document.getElementById("projName").value.trim();
-        if(!name) { alert("请输入剧名"); return; }
+        if(!name) { alert("请填写剧目名称"); return; }
         let data = {
             name: name,
             level: document.getElementById("projLevel").value,
@@ -194,34 +237,37 @@
             studio: document.getElementById("projStudio").value,
             rating: document.getElementById("projRating").value
         };
-        let r;
-        if(editId) r = await db.from("projects").update(data).eq("id", editId);
-        else r = await db.from("projects").insert([data]);
-        if(r.error) alert("失败: "+r.error.message);
+        let result;
+        if(currentId) result = await client.from("projects").update(data).eq("id", currentId);
+        else result = await client.from("projects").insert([data]);
+        if(result.error) alert("保存失败: " + result.error.message);
         else { load(); closeEdit(); }
     }
     
     async function deleteItem(id) {
-        let {error} = await db.from("projects").delete().eq("id", id);
-        if(error) alert("删除失败");
+        let { error } = await client.from("projects").delete().eq("id", id);
+        if(error) alert("删除失败: " + error.message);
         else { load(); closeDetail(); }
     }
     
+    // 绑定事件
     document.getElementById("addBtn").onclick = () => openEdit(null);
     document.getElementById("closeEditModalBtn").onclick = closeEdit;
     document.getElementById("saveBtn").onclick = save;
     document.getElementById("closeDetailBtn").onclick = closeDetail;
-    document.getElementById("levelFilter").onchange = () => { levelFilter = document.getElementById("levelFilter").value; load(); };
-    document.getElementById("statusFilter").onchange = () => { statusFilter = document.getElementById("statusFilter").value; load(); };
+    document.getElementById("levelFilter").onchange = () => { levelVal = document.getElementById("levelFilter").value; load(); };
+    document.getElementById("statusFilter").onchange = () => { statusVal = document.getElementById("statusFilter").value; load(); };
     document.getElementById("resetFilters").onclick = () => {
         document.getElementById("levelFilter").value = "all";
         document.getElementById("statusFilter").value = "all";
-        levelFilter = "all"; statusFilter = "all";
+        levelVal = "all";
+        statusVal = "all";
         load();
     };
     document.getElementById("editModal").onclick = e => { if(e.target === document.getElementById("editModal")) closeEdit(); };
     document.getElementById("detailModal").onclick = e => { if(e.target === document.getElementById("detailModal")) closeDetail(); };
     
+    // 开始
     load();
 </script>
 </body>
