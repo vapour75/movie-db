@@ -74,9 +74,6 @@
         .other-input-group input { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 8px; }
         .selected-platforms { margin-top: 8px; padding: 8px; background: #f1f5f9; border-radius: 12px; }
         .selected-platforms span { display: inline-block; background: white; padding: 2px 8px; border-radius: 12px; margin: 2px; }
-        .poster-container { display: flex; gap: 20px; margin-bottom: 16px; flex-wrap: wrap; }
-        .poster-image { width: 120px; height: 160px; object-fit: cover; border-radius: 12px; background: #f1f5f9; }
-        .poster-placeholder { width: 120px; height: 160px; background: #f1f5f9; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 12px; text-align: center; }
     </style>
 </head>
 <body>
@@ -99,9 +96,15 @@
     <div class="table-wrapper">
         <table class="project-table">
             <thead>
-                <tr><th>剧目名称</th><th>级别</th><th>类型</th><th>集数</th><th>开机</th><th>杀青</th><th>播出日期</th><th>网播平台</th><th>台播平台</th><th>导演</th><th>编剧</th><th>男主</th><th>女主</th><th>男二</th><th>女二</th><th>出品/制作</th><th>豆瓣评分</th><th>评分人次</th><th>状态</th>   </tr>
+                <tr>
+                    <th>剧目名称</th><th>级别</th><th>类型</th><th>集数</th><th>开机</th><th>杀青</th><th>播出日期</th>
+                    <th>网播平台</th><th>台播平台</th><th>导演</th><th>编剧</th><th>男主</th><th>女主</th>
+                    <th>男二</th><th>女二</th><th>出品/制作</th><th>豆瓣评分</th><th>评分人次</th><th>状态</th>
+                </tr>
             </thead>
-            <tbody id="tableBody">发展<td colspan="19" class="loading">加载数据中...发展发展</tbody>
+            <tbody id="tableBody">
+                <tr><td colspan="19" class="loading">加载数据中...</td></tr>
+            </tbody>
         </table>
     </div>
     <footer>点击行查看详情 · 长按行可编辑/删除 · 右下角+号添加</footer>
@@ -171,7 +174,6 @@
     function formatCount(c) { if(!c) return "-"; if(c.toString().indexOf("万")!==-1) return c; var n=parseFloat(c); if(isNaN(n)) return c; if(n>=10000) return (n/10000).toFixed(1)+"万"; return n.toString(); }
     function hasPlatform(str, target) { if(!str) return false; return str.indexOf(target) !== -1; }
 
-    // 网播平台相关函数
     function getSelectedPlatforms() {
         let selected = [];
         document.querySelectorAll('#platformCheckGroup input[type="checkbox"]').forEach(cb => {
@@ -229,11 +231,11 @@
     }
 
     async function loadData() {
-        document.getElementById("tableBody").innerHTML = '发展<td colspan="19" class="loading">加载数据中...发展发展';
+        document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="loading">加载数据中...</td></tr>';
         const { data, error } = await supabase.from("projects").select("*").order("id", { ascending: false });
         if(error) { 
             console.error(error); 
-            document.getElementById("tableBody").innerHTML = '发展<td colspan="19" class="empty-state">加载失败: ' + error.message + '发展发展';
+            document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="empty-state">加载失败: ' + error.message + '</td></tr>';
             return; 
         }
         allProjects = data || [];
@@ -255,7 +257,7 @@
             if(filters.status !== "all") { let s = getStatus(p); if(s !== filters.status) return false; }
             return true;
         });
-        if(filtered.length === 0) { document.getElementById("tableBody").innerHTML = '发展<td colspan="19" class="empty-state">暂无项目数据发展发展'; return; }
+        if(filtered.length === 0) { document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="empty-state">暂无项目数据</td></tr>'; return; }
         let html = "";
         for(let p of filtered) {
             let status = getStatus(p);
@@ -283,7 +285,6 @@
         }
         document.getElementById("tableBody").innerHTML = html;
         
-        // 绑定点击事件
         document.querySelectorAll("#tableBody tr").forEach(row => {
             row.onclick = (e) => {
                 let id = parseInt(row.dataset.id);
@@ -292,7 +293,6 @@
             };
         });
         
-        // 绑定长按事件
         bindLongPress();
     }
     
@@ -353,7 +353,6 @@
         currentEditId = id;
         document.getElementById("modalTitle").innerText = id ? "编辑项目" : "添加项目";
         
-        // 重置表单
         document.querySelectorAll('#platformCheckGroup input[type="checkbox"]').forEach(c => c.checked = false);
         document.getElementById("otherPlatformInput").value = "";
         document.getElementById("otherInputGroup").style.display = "none";
