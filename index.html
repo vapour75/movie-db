@@ -62,9 +62,12 @@
     </div>
     <div class="table-wrapper">
         <table class="project-table">
-            <thead><tr><th>剧目名称</th><th>级别</th><th>类型</th><th>集数</th><th>开机</th><th>播出日期</th><th>导演</th><th>编剧</th><th>主演</th><th>状态</th>?</thead>
-            <tbody id="tableBody"><tr><td colspan="10" class="loading">加载数据中...</td></tr></tbody>
-        ?</table>
+            <thead>
+                <tr><th>剧目名称</th><th>级别</th><th>类型</th><th>集数</th><th>开机</th><th>播出日期</th><th>导演</th><th>编剧</th><th>主演</th><th>状态</th></tr>
+            </thead>
+            <tbody id="tableBody"><tr><td colspan="10" class="loading">加载数据中...</td></tr>
+            </tbody>
+        </table>
     </div>
     <footer>点击行查看详情 · 右下角+号添加</footer>
 </div>
@@ -94,11 +97,8 @@
 </div>
 
 <script>
-    // Supabase 配置
     const MY_URL = "https://kcggqsgsgkmpuydrytcx.supabase.co";
     const MY_KEY = "sb_publishable__TF7TumQQ-kpNdN-WF64DA_EjcsI0nn";
-    
-    // 创建客户端
     const client = supabase.createClient(MY_URL, MY_KEY);
     
     let projects = [];
@@ -119,12 +119,10 @@
         }
         projects = data || [];
         
-        // 统计
         let total = projects.length, kaiji=0, shaqing=0, yibochu=0;
         for(let p of projects) { let s = getStatus(p); if(s==="已播出") yibochu++; else if(s==="已杀青") shaqing++; else if(s==="已开机") kaiji++; }
         document.getElementById("statsContainer").innerHTML = '<div class="stat-card"><div class="stat-number">'+total+'</div><div>总项目</div></div><div class="stat-card"><div class="stat-number">'+kaiji+'</div><div>已开机</div></div><div class="stat-card"><div class="stat-number">'+shaqing+'</div><div>已杀青</div></div><div class="stat-card"><div class="stat-number">'+yibochu+'</div><div>已播出</div></div>';
         
-        // 筛选
         let filtered = projects.filter(p => {
             if(levelVal !== "all" && p.level !== levelVal) return false;
             if(statusVal !== "all") { let s = getStatus(p); if(s !== statusVal) return false; }
@@ -141,21 +139,20 @@
             let actors = [p.male1, p.female1].filter(x=>x && x!=="").join(" / ");
             if(!actors) actors = "-";
             html += '<tr data-id="' + p.id + '">';
-            html += '<td style="font-weight:500;">' + h(p.name) + '发展';
-            html += '|<span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span>发展';
-            html += '|' + h(p.type || "-") + '发展';
-            html += '|' + h(p.episodes || "-") + '发展';
-            html += '|' + (p.start_date || "-") + '发展';
-            html += '|' + (p.air_date || "-") + '发展';
-            html += '|' + h(p.director || "-") + '发展';
-            html += '|' + h(p.writer || "-") + '发展';
-            html += '|' + h(actors) + '发展';
-            html += '|<span class="status-badge">' + getStatus(p) + '</span>发展';
-            html += '发展';
+            html += '<td style="font-weight:500;">' + h(p.name) + '</td>';
+            html += '<td><span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span></td>';
+            html += '<td>' + h(p.type || "-") + '</td>';
+            html += '<td>' + h(p.episodes || "-") + '</td>';
+            html += '<td>' + (p.start_date || "-") + '</td>';
+            html += '<td>' + (p.air_date || "-") + '</td>';
+            html += '<td>' + h(p.director || "-") + '</td>';
+            html += '<td>' + h(p.writer || "-") + '</td>';
+            html += '<td>' + h(actors) + '</td>';
+            html += '<td><span class="status-badge">' + getStatus(p) + '</span></td>';
+            html += '</tr>';
         }
         document.getElementById("tableBody").innerHTML = html;
         
-        // 点击事件
         document.querySelectorAll("#tableBody tr").forEach(row => {
             row.onclick = () => {
                 let id = parseInt(row.getAttribute("data-id"));
@@ -250,7 +247,6 @@
         else { load(); closeDetail(); }
     }
     
-    // 绑定事件
     document.getElementById("addBtn").onclick = () => openEdit(null);
     document.getElementById("closeEditModalBtn").onclick = closeEdit;
     document.getElementById("saveBtn").onclick = save;
@@ -267,7 +263,6 @@
     document.getElementById("editModal").onclick = e => { if(e.target === document.getElementById("editModal")) closeEdit(); };
     document.getElementById("detailModal").onclick = e => { if(e.target === document.getElementById("detailModal")) closeDetail(); };
     
-    // 开始
     load();
 </script>
 </body>
