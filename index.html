@@ -2,240 +2,116 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>影视项目数据库</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background-color: #f5f7fb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 16px 12px 80px 12px; color: #1e293b; }
-        .container { max-width: 100%; overflow-x: auto; }
+        body { font-family: system-ui, sans-serif; background: #f5f7fb; padding: 16px; }
         .header { margin-bottom: 20px; }
-        .header h1 { font-size: 26px; font-weight: 700; background: linear-gradient(135deg, #1e293b, #3b4b62); background-clip: text; -webkit-background-clip: text; color: transparent; }
-        .header p { font-size: 13px; color: #64748b; }
-        .stats { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-        .stat-card { background: white; border-radius: 16px; padding: 12px 16px; flex: 1; min-width: 70px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #edf2f7; }
-        .stat-number { font-size: 24px; font-weight: 700; color: #1e293b; }
-        .stat-label { font-size: 12px; color: #64748b; }
-        .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0; align-items: center; }
-        .filter-group { display: flex; align-items: center; gap: 8px; background: white; padding: 4px 12px; border-radius: 40px; border: 1px solid #e2e8f0; }
-        .filter-group label { font-size: 12px; color: #64748b; }
-        .filter-group select { border: none; background: transparent; font-size: 13px; padding: 6px 0; outline: none; font-weight: 500; color: #1e293b; }
-        .reset-btn { background: #f1f5f9; border: none; padding: 6px 14px; border-radius: 30px; font-size: 12px; cursor: pointer; color: #475569; }
-        .table-wrapper { overflow-x: auto; border-radius: 20px; background: white; border: 1px solid #edf2f7; margin-bottom: 16px; }
-        .project-table { width: 100%; min-width: 1400px; border-collapse: collapse; font-size: 12px; }
-        .project-table th { background: #f8fafc; padding: 12px 8px; text-align: left; font-weight: 600; color: #475569; border-bottom: 1px solid #e2e8f0; }
-        .project-table td { padding: 12px 8px; border-bottom: 1px solid #f1f5f9; vertical-align: top; color: #334155; }
-        .project-table tr { cursor: pointer; transition: background 0.2s; }
-        .project-table tr:hover { background-color: #f8fafc; }
-        .level-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-align: center; min-width: 48px; }
+        .header h1 { font-size: 24px; }
+        .stats { display: flex; gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: white; border-radius: 12px; padding: 12px; flex: 1; text-align: center; }
+        .stat-number { font-size: 24px; font-weight: bold; }
+        .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .filter-group { background: white; padding: 6px 12px; border-radius: 20px; border: 1px solid #ddd; }
+        .filter-group select { border: none; background: none; }
+        .reset-btn { background: #e2e8f0; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; }
+        .table-wrapper { overflow-x: auto; background: white; border-radius: 16px; }
+        .project-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1000px; }
+        .project-table th, .project-table td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #eee; }
+        .project-table tr { cursor: pointer; }
+        .level-badge { padding: 2px 8px; border-radius: 12px; font-size: 11px; }
         .level-S { background: #fef3c7; color: #b45309; }
-        .level-Aplus { background: #dcfce7; color: #166534; }
         .level-A { background: #dbeafe; color: #1e40af; }
-        .level-Bplus { background: #f1f5f9; color: #475569; }
-        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 500; }
+        .level-Aplus { background: #dcfce7; color: #166534; }
+        .status-badge { padding: 2px 8px; border-radius: 12px; font-size: 10px; }
         .status-yibochu { background: #e0e7ff; color: #3730a3; }
-        .status-yishaqing { background: #dcfce7; color: #166534; }
-        .status-yikaiji { background: #dbeafe; color: #1e40af; }
-        .status-daikaiji { background: #fef3c7; color: #b45309; }
-        .rating-badge { display: inline-block; background: #fef3c7; color: #b45309; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-        .rating-high { background: #dcfce7; color: #166534; }
-        .rating-medium { background: #fef3c7; color: #b45309; }
-        .rating-low { background: #fee2e2; color: #b91c1c; }
-        .fab { position: fixed; bottom: 24px; right: 20px; width: 56px; height: 56px; background: #1e293b; color: white; border-radius: 28px; display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; z-index: 100; border: none; }
-        .fab:active { transform: scale(0.94); }
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; display: flex; align-items: flex-end; justify-content: center; visibility: hidden; opacity: 0; transition: 0.2s; }
+        .fab { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; background: #1e293b; color: white; border-radius: 25px; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; border: none; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; justify-content: center; visibility: hidden; opacity: 0; transition: 0.2s; z-index: 200; }
         .modal-overlay.active { visibility: visible; opacity: 1; }
-        .modal-drawer { background: white; width: 100%; max-width: 700px; border-radius: 24px 24px 0 0; max-height: 85vh; overflow-y: auto; padding: 24px 20px 32px; transform: translateY(100%); transition: transform 0.3s ease; }
+        .modal-drawer { background: white; width: 100%; max-width: 600px; border-radius: 20px 20px 0 0; max-height: 80vh; overflow-y: auto; padding: 20px; transform: translateY(100%); transition: transform 0.3s; }
         .modal-overlay.active .modal-drawer { transform: translateY(0); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 20px; font-weight: 600; }
-        .modal-close { background: none; border: none; font-size: 28px; cursor: pointer; color: #64748b; }
-        .form-group { margin-bottom: 14px; }
-        .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; color: #334155; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 14px; font-family: inherit; }
+        .form-group { margin-bottom: 12px; }
+        .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px; }
         .form-row { display: flex; gap: 12px; }
         .form-row .form-group { flex: 1; }
-        .btn-submit { background: #1e293b; color: white; border: none; width: 100%; padding: 14px; border-radius: 40px; font-size: 16px; font-weight: 600; margin-top: 12px; cursor: pointer; }
-        .btn-edit { background: #3b82f6; }
-        .btn-delete { background: #ef4444; }
-        .empty-state { text-align: center; padding: 48px 20px; color: #94a3b8; }
-        footer { margin-top: 16px; text-align: center; font-size: 11px; color: #94a3b8; }
-        .loading { text-align: center; padding: 40px; color: #64748b; }
-        .detail-block { background: #f8fafc; padding: 12px; border-radius: 16px; margin-bottom: 12px; }
+        .btn-submit { background: #1e293b; color: white; border: none; width: 100%; padding: 12px; border-radius: 40px; margin-top: 12px; cursor: pointer; }
         .button-group { display: flex; gap: 12px; margin-top: 16px; }
         .button-group button { flex: 1; }
-        .action-menu { position: fixed; background: white; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); z-index: 400; overflow: hidden; min-width: 140px; opacity: 0; visibility: hidden; transition: 0.2s; }
-        .action-menu button { width: 100%; padding: 12px 16px; border: none; background: white; text-align: left; font-size: 14px; cursor: pointer; }
-        .action-menu .menu-delete { color: #ef4444; }
-        .longpress-hint { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; padding: 8px 16px; border-radius: 40px; font-size: 12px; z-index: 300; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
-        .platform-check-group { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; padding: 12px; background: #f8fafc; border-radius: 12px; }
-        .platform-check-item { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-        .platform-check-item input { width: 18px; height: 18px; cursor: pointer; margin: 0; }
-        .other-input-group { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
-        .other-input-group input { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 8px; }
-        .selected-platforms { margin-top: 8px; padding: 8px; background: #f1f5f9; border-radius: 12px; }
-        .selected-platforms span { display: inline-block; background: white; padding: 2px 8px; border-radius: 12px; margin: 2px; }
+        .loading { text-align: center; padding: 40px; color: #64748b; }
+        .detail-block { background: #f8fafc; padding: 12px; border-radius: 12px; margin-bottom: 12px; }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
         <h1>🎬 影视项目数据库</h1>
-        <p>剧目级别 · 类型 · 主创团队 · 进度追踪 · 豆瓣评分 · 多人共享</p>
+        <p>多人共享 · 实时同步</p>
     </div>
-
     <div class="stats" id="statsContainer"></div>
-
     <div class="filters">
-        <div class="filter-group"><label>级别</label><select id="levelFilter"><option value="all">全部</option><option value="S">S级</option><option value="A+">A+级</option><option value="A">A级</option><option value="B+">B+级</option></select></div>
-        <div class="filter-group"><label>类型</label><select id="typeFilter"><option value="all">全部</option><option value="古装">古装</option><option value="都市">都市</option><option value="历史">历史</option><option value="犯罪">犯罪</option></select></div>
-        <div class="filter-group"><label>网播平台</label><select id="platformFilter"><option value="all">全部</option><option value="腾讯视频">腾讯视频</option><option value="爱奇艺">爱奇艺</option><option value="优酷">优酷</option></select></div>
+        <div class="filter-group"><label>级别</label><select id="levelFilter"><option value="all">全部</option><option value="S">S级</option><option value="A+">A+级</option><option value="A">A级</option></select></div>
         <div class="filter-group"><label>状态</label><select id="statusFilter"><option value="all">全部</option><option value="已播出">已播出</option><option value="已杀青">已杀青</option><option value="已开机">已开机</option></select></div>
         <button class="reset-btn" id="resetFilters">重置</button>
     </div>
-
     <div class="table-wrapper">
         <table class="project-table">
-            <thead>
-                <tr>
-                    <th>剧目名称</th><th>级别</th><th>类型</th><th>集数</th><th>开机</th><th>杀青</th><th>播出日期</th>
-                    <th>网播平台</th><th>台播平台</th><th>导演</th><th>编剧</th><th>男主</th><th>女主</th>
-                    <th>男二</th><th>女二</th><th>出品/制作</th><th>豆瓣评分</th><th>评分人次</th><th>状态</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody">
-                <tr><td colspan="19" class="loading">加载数据中...</td></tr>
-            </tbody>
+            <thead><tr><th>剧目名称</th><th>级别</th><th>类型</th><th>集数</th><th>开机</th><th>播出日期</th><th>导演</th><th>编剧</th><th>主演</th><th>状态</th>?</thead>
+            <tbody id="tableBody"><tr><td colspan="10" class="loading">加载数据中...</td></tr></tbody>
         </table>
     </div>
-    <footer>点击行查看详情 · 长按行可编辑/删除 · 右下角+号添加</footer>
+    <footer style="text-align:center; font-size:11px; margin-top:16px;">点击行查看详情 · 右下角+号添加</footer>
 </div>
-
 <button class="fab" id="addBtn">+</button>
 
-<!-- 编辑模态框 -->
 <div id="editModal" class="modal-overlay">
     <div class="modal-drawer">
-        <div class="modal-header"><span id="modalTitle">添加项目</span><button class="modal-close" id="closeEditModalBtn">&times;</button></div>
-        <div class="form-row"><div class="form-group"><label>剧目名称 *</label><input type="text" id="projName" placeholder="剧名"></div><div class="form-group"><label>级别</label><select id="projLevel"><option value="S">S级</option><option value="A+">A+级</option><option value="A">A级</option><option value="B+">B+级</option></select></div></div>
-        <div class="form-row"><div class="form-group"><label>类型</label><input type="text" id="projType" placeholder="古装/爱情"></div><div class="form-group"><label>集数</label><input type="text" id="projEpisodes" placeholder="40集"></div></div>
-        <div class="form-row"><div class="form-group"><label>开机日期</label><input type="text" id="projStart" placeholder="20241215"></div><div class="form-group"><label>杀青日期</label><input type="text" id="projEnd" placeholder="20250320"></div></div>
-        <div class="form-row"><div class="form-group"><label>播出日期</label><input type="text" id="projAirDate" placeholder="20250115"></div><div class="form-group"><label>台播平台</label><input type="text" id="projTVPlatform" placeholder="CCTV1、湖南卫视"></div></div>
-        <div class="form-group"><label>网播平台（可多选）</label>
-            <div class="platform-check-group" id="platformCheckGroup">
-                <label class="platform-check-item"><input type="checkbox" value="腾讯视频"> 腾讯视频</label>
-                <label class="platform-check-item"><input type="checkbox" value="爱奇艺"> 爱奇艺</label>
-                <label class="platform-check-item"><input type="checkbox" value="优酷"> 优酷</label>
-                <label class="platform-check-item"><input type="checkbox" value="芒果TV"> 芒果TV</label>
-                <label class="platform-check-item"><input type="checkbox" value="哔哩哔哩"> 哔哩哔哩</label>
-                <label class="platform-check-item"><input type="checkbox" value="其他" id="otherCheckbox"> 其他</label>
-            </div>
-            <div class="other-input-group" id="otherInputGroup" style="display:none;"><label>其他平台：</label><input type="text" id="otherPlatformInput" placeholder="如：西瓜视频"></div>
-            <div class="selected-platforms" id="selectedPlatformsDisplay"><span>已选：无</span></div>
-        </div>
-        <div class="form-row"><div class="form-group"><label>导演</label><input type="text" id="projDirector" placeholder="导演名"></div><div class="form-group"><label>编剧</label><input type="text" id="projWriter" placeholder="编剧名"></div></div>
-        <div class="form-row"><div class="form-group"><label>男主</label><input type="text" id="projMale1" placeholder="男主名"></div><div class="form-group"><label>女主</label><input type="text" id="projFemale1" placeholder="女主名"></div></div>
-        <div class="form-row"><div class="form-group"><label>男二</label><input type="text" id="projMale2" placeholder="男二名"></div><div class="form-group"><label>女二</label><input type="text" id="projFemale2" placeholder="女二名"></div></div>
-        <div class="form-row"><div class="form-group"><label>出品/制作</label><input type="text" id="projStudio" placeholder="出品公司"></div><div class="form-group"><label>总制片人</label><input type="text" id="projProducer" placeholder="总制片人"></div></div>
-        <div class="form-row"><div class="form-group"><label>制片人</label><input type="text" id="projCoProducer" placeholder="制片人"></div><div class="form-group"><label>豆瓣评分</label><input type="text" id="projRating" placeholder="如：8.5"></div></div>
-        <div class="form-row"><div class="form-group"><label>豆瓣评分人次</label><input type="text" id="projRatingCount" placeholder="如：382000"></div><div class="form-group"><label>海报图片URL</label><input type="text" id="projPoster" placeholder="https://... 图片地址"></div></div>
-        <div class="form-group"><label>原著</label><input type="text" id="projOriginal" placeholder="原著小说"></div>
-        <button class="btn-submit" id="saveProjectBtn">保存项目</button>
+        <div style="display:flex; justify-content:space-between; margin-bottom:16px;"><span id="modalTitle" style="font-size:18px; font-weight:bold;">添加项目</span><button id="closeEditModalBtn" style="background:none; border:none; font-size:24px;">×</button></div>
+        <div class="form-group"><label>剧目名称 *</label><input type="text" id="projName"></div>
+        <div class="form-row"><div class="form-group"><label>级别</label><select id="projLevel"><option value="S">S级</option><option value="A+">A+级</option><option value="A">A级</option></select></div><div class="form-group"><label>类型</label><input type="text" id="projType"></div></div>
+        <div class="form-row"><div class="form-group"><label>集数</label><input type="text" id="projEpisodes"></div><div class="form-group"><label>开机日期</label><input type="text" id="projStart"></div></div>
+        <div class="form-row"><div class="form-group"><label>播出日期</label><input type="text" id="projAirDate"></div><div class="form-group"><label>杀青日期</label><input type="text" id="projEnd"></div></div>
+        <div class="form-row"><div class="form-group"><label>导演</label><input type="text" id="projDirector"></div><div class="form-group"><label>编剧</label><input type="text" id="projWriter"></div></div>
+        <div class="form-row"><div class="form-group"><label>男主</label><input type="text" id="projMale1"></div><div class="form-group"><label>女主</label><input type="text" id="projFemale1"></div></div>
+        <div class="form-group"><label>出品/制作</label><input type="text" id="projStudio"></div>
+        <div class="form-group"><label>豆瓣评分</label><input type="text" id="projRating" placeholder="如：8.5"></div>
+        <button class="btn-submit" id="saveBtn">保存</button>
     </div>
 </div>
 
-<!-- 详情模态框 -->
 <div id="detailModal" class="modal-overlay">
     <div class="modal-drawer">
-        <div class="modal-header"><span>项目详情</span><button class="modal-close" id="closeDetailModalBtn">&times;</button></div>
+        <div style="display:flex; justify-content:space-between;"><span style="font-size:18px; font-weight:bold;">项目详情</span><button id="closeDetailBtn" style="background:none; border:none; font-size:24px;">×</button></div>
         <div id="detailContent"></div>
-        <div class="button-group"><button class="btn-submit btn-edit" id="editFromDetailBtn">编辑</button><button class="btn-submit btn-delete" id="deleteFromDetailBtn">删除</button></div>
+        <div class="button-group"><button class="btn-submit" id="editDetailBtn" style="background:#3b82f6;">编辑</button><button class="btn-submit" id="deleteDetailBtn" style="background:#ef4444;">删除</button></div>
     </div>
 </div>
-
-<div id="actionMenu" class="action-menu"><button id="menuEditBtn">编辑</button><button id="menuDeleteBtn" class="menu-delete">删除</button></div>
-<div id="longpressHint" class="longpress-hint">长按可编辑或删除</div>
 
 <script>
     // Supabase 配置
     const SUPABASE_URL = "https://kcggqsgsgkmpuydrytcx.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable__TF7TumQQ-kpNdN-WF64DA_EjcsI0nn";
     
+    // 只创建一次客户端
     const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
     let allProjects = [];
     let currentEditId = null;
-    let filters = { level: "all", type: "all", platform: "all", status: "all" };
+    let currentFilter = "all";
+    let statusFilter = "all";
 
     function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':m==='>'?'&gt;':m); }
     function getStatus(p) { if(p.air_date && p.air_date !== "") return "已播出"; if(p.end_date && p.end_date !== "") return "已杀青"; if(p.start_date && p.start_date !== "") return "已开机"; return "待开机"; }
-    function getLevelClass(l) { if(l==="S") return "level-S"; if(l==="A+") return "level-Aplus"; if(l==="A") return "level-A"; if(l==="B+") return "level-Bplus"; return ""; }
-    function getStatusClass(s) { if(s==="已播出") return "status-yibochu"; if(s==="已杀青") return "status-yishaqing"; if(s==="已开机") return "status-yikaiji"; return "status-daikaiji"; }
-    function getRatingClass(r) { if(!r) return ""; var n=parseFloat(r); if(isNaN(n)) return ""; if(n>=8) return "rating-high"; if(n>=6) return "rating-medium"; return "rating-low"; }
-    function formatCount(c) { if(!c) return "-"; if(c.toString().indexOf("万")!==-1) return c; var n=parseFloat(c); if(isNaN(n)) return c; if(n>=10000) return (n/10000).toFixed(1)+"万"; return n.toString(); }
-    function hasPlatform(str, target) { if(!str) return false; return str.indexOf(target) !== -1; }
-
-    function getSelectedPlatforms() {
-        let selected = [];
-        document.querySelectorAll('#platformCheckGroup input[type="checkbox"]').forEach(cb => {
-            if(cb.checked) {
-                if(cb.value === "其他") {
-                    let other = document.getElementById("otherPlatformInput").value.trim();
-                    if(other) selected.push(other);
-                } else {
-                    selected.push(cb.value);
-                }
-            }
-        });
-        return selected;
-    }
-    
-    function updateSelectedDisplay() {
-        let selected = [];
-        document.querySelectorAll('#platformCheckGroup input[type="checkbox"]').forEach(cb => {
-            if(cb.checked) {
-                if(cb.value === "其他") {
-                    let other = document.getElementById("otherPlatformInput").value.trim();
-                    selected.push(other || "待填写");
-                } else {
-                    selected.push(cb.value);
-                }
-            }
-        });
-        let div = document.getElementById("selectedPlatformsDisplay");
-        if(selected.length === 0) div.innerHTML = '<span>已选：无</span>';
-        else div.innerHTML = selected.map(s => '<span>' + escapeHtml(s) + '</span>').join("");
-    }
-    
-    function setPlatformCheckboxes(val) {
-        let checkboxes = document.querySelectorAll('#platformCheckGroup input[type="checkbox"]');
-        checkboxes.forEach(c => c.checked = false);
-        document.getElementById("otherPlatformInput").value = "";
-        document.getElementById("otherInputGroup").style.display = "none";
-        if(!val || val === "") { updateSelectedDisplay(); return; }
-        let platforms = val.split(/[、,，]/);
-        let others = [];
-        for(let p of platforms) {
-            let found = false;
-            for(let cb of checkboxes) {
-                if(cb.value === p && cb.value !== "其他") { cb.checked = true; found = true; break; }
-            }
-            if(!found && p) others.push(p);
-        }
-        if(others.length > 0) {
-            let otherCb = document.querySelector('#platformCheckGroup input[value="其他"]');
-            if(otherCb) otherCb.checked = true;
-            document.getElementById("otherPlatformInput").value = others.join("、");
-            document.getElementById("otherInputGroup").style.display = "flex";
-        }
-        updateSelectedDisplay();
-    }
+    function getLevelClass(l) { if(l==="S") return "level-S"; if(l==="A+") return "level-Aplus"; if(l==="A") return "level-A"; return ""; }
+    function getStatusClass(s) { if(s==="已播出") return "status-yibochu"; return ""; }
 
     async function loadData() {
-        document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="loading">加载数据中...</td></tr>';
+        document.getElementById("tableBody").innerHTML = '<tr><td colspan="10" class="loading">加载数据中...</td></tr>';
         const { data, error } = await supabase.from("projects").select("*").order("id", { ascending: false });
         if(error) { 
             console.error(error); 
-            document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="empty-state">加载失败: ' + error.message + '</td></tr>';
+            document.getElementById("tableBody").innerHTML = '<tr><td colspan="10" class="loading">加载失败: ' + error.message + '</td></tr>';
             return; 
         }
         allProjects = data || [];
@@ -246,104 +122,54 @@
     function updateStats() {
         let total = allProjects.length, kaiji=0, shaqing=0, yibochu=0;
         for(let p of allProjects) { let s=getStatus(p); if(s==="已播出") yibochu++; else if(s==="已杀青") shaqing++; else if(s==="已开机") kaiji++; }
-        document.getElementById("statsContainer").innerHTML = '<div class="stat-card"><div class="stat-number">'+total+'</div><div class="stat-label">总项目</div></div><div class="stat-card"><div class="stat-number">'+kaiji+'</div><div class="stat-label">已开机</div></div><div class="stat-card"><div class="stat-number">'+shaqing+'</div><div class="stat-label">已杀青</div></div><div class="stat-card"><div class="stat-number">'+yibochu+'</div><div class="stat-label">已播出</div></div>';
+        document.getElementById("statsContainer").innerHTML = '<div class="stat-card"><div class="stat-number">'+total+'</div><div>总项目</div></div><div class="stat-card"><div class="stat-number">'+kaiji+'</div><div>已开机</div></div><div class="stat-card"><div class="stat-number">'+shaqing+'</div><div>已杀青</div></div><div class="stat-card"><div class="stat-number">'+yibochu+'</div><div>已播出</div></div>';
     }
 
     function renderTable() {
         let filtered = allProjects.filter(p => {
-            if(filters.level !== "all" && p.level !== filters.level) return false;
-            if(filters.type !== "all" && p.type && p.type.indexOf(filters.type) === -1) return false;
-            if(filters.platform !== "all" && !hasPlatform(p.online_platform, filters.platform)) return false;
-            if(filters.status !== "all") { let s = getStatus(p); if(s !== filters.status) return false; }
+            if(currentFilter !== "all" && p.level !== currentFilter) return false;
+            if(statusFilter !== "all") { let s = getStatus(p); if(s !== statusFilter) return false; }
             return true;
         });
-        if(filtered.length === 0) { document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="empty-state">暂无项目数据</td></tr>'; return; }
+        if(filtered.length === 0) { document.getElementById("tableBody").innerHTML = '<tr><td colspan="10" class="loading">暂无数据</td></tr>'; return; }
         let html = "";
         for(let p of filtered) {
             let status = getStatus(p);
+            let actors = [p.male1, p.female1].filter(x=>x).join(" / ");
             html += `<tr data-id="${p.id}">
-                <td style="font-weight:500;">${escapeHtml(p.name)}</td>
+                <td>${escapeHtml(p.name)}</td>
                 <td><span class="level-badge ${getLevelClass(p.level)}">${p.level}级</span></td>
                 <td>${escapeHtml(p.type || "-")}</td>
                 <td>${escapeHtml(p.episodes || "-")}</td>
                 <td>${p.start_date || "-"}</td>
-                <td>${p.end_date || "-"}</td>
                 <td>${p.air_date || "-"}</td>
-                <td>${escapeHtml(p.online_platform || "-")}</td>
-                <td>${escapeHtml(p.tv_platform || "-")}</td>
                 <td>${escapeHtml(p.director || "-")}</td>
                 <td>${escapeHtml(p.writer || "-")}</td>
-                <td>${escapeHtml(p.male1 || "-")}</td>
-                <td>${escapeHtml(p.female1 || "-")}</td>
-                <td>${escapeHtml(p.male2 || "-")}</td>
-                <td>${escapeHtml(p.female2 || "-")}</td>
-                <td>${escapeHtml(p.studio || "-")}</td>
-                <td>${p.rating ? `<span class="rating-badge ${getRatingClass(p.rating)}">${p.rating}</span>` : "-"}</td>
-                <td>${formatCount(p.rating_count)}</td>
+                <td>${escapeHtml(actors)}</td>
                 <td><span class="status-badge ${getStatusClass(status)}">${status}</span></td>
-             </tr>`;
+            </tr>`;
         }
         document.getElementById("tableBody").innerHTML = html;
         
         document.querySelectorAll("#tableBody tr").forEach(row => {
-            row.onclick = (e) => {
+            row.onclick = () => {
                 let id = parseInt(row.dataset.id);
                 let proj = allProjects.find(p => p.id === id);
                 if(proj) showDetail(proj);
             };
         });
-        
-        bindLongPress();
-    }
-    
-    function bindLongPress() {
-        let pressTimer;
-        let rows = document.querySelectorAll("#tableBody tr");
-        rows.forEach(row => {
-            row.addEventListener('mousedown', () => {
-                pressTimer = setTimeout(() => {
-                    let id = parseInt(row.dataset.id);
-                    let proj = allProjects.find(p => p.id === id);
-                    if(proj) showActionMenu(row, proj);
-                }, 500);
-            });
-            row.addEventListener('mouseup', () => { clearTimeout(pressTimer); });
-            row.addEventListener('mouseleave', () => { clearTimeout(pressTimer); });
-        });
-    }
-    
-    function showActionMenu(row, proj) {
-        let menu = document.getElementById("actionMenu");
-        let rect = row.getBoundingClientRect();
-        menu.style.left = rect.left + 10 + "px";
-        menu.style.top = rect.bottom + 5 + "px";
-        menu.style.opacity = "1";
-        menu.style.visibility = "visible";
-        
-        document.getElementById("menuEditBtn").onclick = () => { hideMenu(); openEditModal(proj.id); };
-        document.getElementById("menuDeleteBtn").onclick = () => { hideMenu(); if(confirm("删除《" + proj.name + "》？")) deleteProject(proj.id); };
-        
-        setTimeout(() => { document.addEventListener('click', function hide(e) { if(!menu.contains(e.target)) { hideMenu(); document.removeEventListener('click', hide); } }); }, 100);
-    }
-    
-    function hideMenu() {
-        let menu = document.getElementById("actionMenu");
-        menu.style.opacity = "0";
-        menu.style.visibility = "hidden";
     }
 
     function showDetail(p) {
         let status = getStatus(p);
-        let detailHtml = `<div class="detail-block"><h3>${escapeHtml(p.name)}</h3><div><span class="level-badge ${getLevelClass(p.level)}">${p.level}级</span> <span class="status-badge ${getStatusClass(status)}">${status}</span></div></div>`;
-        detailHtml += `<div class="detail-block"><strong>类型/集数</strong> ${escapeHtml(p.type||"-")} / ${p.episodes||"-"}<br><strong>开机/杀青/播出</strong> ${p.start_date||"-"} / ${p.end_date||"-"} / ${p.air_date||"-"}</div>`;
-        detailHtml += `<div class="detail-block"><strong>网播/台播</strong> ${escapeHtml(p.online_platform||"-")} / ${escapeHtml(p.tv_platform||"-")}</div>`;
-        detailHtml += `<div class="detail-block"><strong>导演/编剧</strong> ${escapeHtml(p.director||"-")} / ${escapeHtml(p.writer||"-")}<br><strong>主演</strong> ${p.male1||"-"} ${p.female1?"/ "+p.female1:""} ${p.male2?"/ "+p.male2:""} ${p.female2?"/ "+p.female2:""}</div>`;
-        detailHtml += `<div class="detail-block"><strong>出品/制作</strong> ${escapeHtml(p.studio||"-")}<br><strong>制片人</strong> ${p.producer||"-"} ${p.co_producer?"/ "+p.co_producer:""}<br><strong>豆瓣评分</strong> ${p.rating||"-"} (${formatCount(p.rating_count)})<br><strong>原著</strong> ${escapeHtml(p.original||"-")}</div>`;
-        document.getElementById("detailContent").innerHTML = detailHtml;
-        
-        document.getElementById("editFromDetailBtn").onclick = () => { closeDetail(); openEditModal(p.id); };
-        document.getElementById("deleteFromDetailBtn").onclick = () => { if(confirm("删除《" + p.name + "》？")) deleteProject(p.id); };
-        
+        document.getElementById("detailContent").innerHTML = `
+            <div class="detail-block"><h3>${escapeHtml(p.name)}</h3><div><span class="level-badge ${getLevelClass(p.level)}">${p.level}级</span> <span class="status-badge">${status}</span></div></div>
+            <div class="detail-block"><strong>类型/集数</strong> ${escapeHtml(p.type||"-")} / ${p.episodes||"-"}<br><strong>开机/杀青/播出</strong> ${p.start_date||"-"} / ${p.end_date||"-"} / ${p.air_date||"-"}</div>
+            <div class="detail-block"><strong>导演/编剧</strong> ${escapeHtml(p.director||"-")} / ${escapeHtml(p.writer||"-")}<br><strong>主演</strong> ${p.male1||"-"} ${p.female1?"/ "+p.female1:""}</div>
+            <div class="detail-block"><strong>出品/制作</strong> ${escapeHtml(p.studio||"-")}<br><strong>豆瓣评分</strong> ${p.rating||"-"}</div>
+        `;
+        document.getElementById("editDetailBtn").onclick = () => { closeDetail(); openEditModal(p.id); };
+        document.getElementById("deleteDetailBtn").onclick = () => { if(confirm("删除？")) deleteProject(p.id); };
         document.getElementById("detailModal").classList.add("active");
     }
     
@@ -352,11 +178,6 @@
     function openEditModal(id) {
         currentEditId = id;
         document.getElementById("modalTitle").innerText = id ? "编辑项目" : "添加项目";
-        
-        document.querySelectorAll('#platformCheckGroup input[type="checkbox"]').forEach(c => c.checked = false);
-        document.getElementById("otherPlatformInput").value = "";
-        document.getElementById("otherInputGroup").style.display = "none";
-        
         if(id) {
             let p = allProjects.find(x => x.id === id);
             if(p) {
@@ -367,21 +188,12 @@
                 document.getElementById("projStart").value = p.start_date || "";
                 document.getElementById("projEnd").value = p.end_date || "";
                 document.getElementById("projAirDate").value = p.air_date || "";
-                document.getElementById("projTVPlatform").value = p.tv_platform || "";
-                setPlatformCheckboxes(p.online_platform || "");
                 document.getElementById("projDirector").value = p.director || "";
                 document.getElementById("projWriter").value = p.writer || "";
                 document.getElementById("projMale1").value = p.male1 || "";
                 document.getElementById("projFemale1").value = p.female1 || "";
-                document.getElementById("projMale2").value = p.male2 || "";
-                document.getElementById("projFemale2").value = p.female2 || "";
                 document.getElementById("projStudio").value = p.studio || "";
-                document.getElementById("projProducer").value = p.producer || "";
-                document.getElementById("projCoProducer").value = p.co_producer || "";
                 document.getElementById("projRating").value = p.rating || "";
-                document.getElementById("projRatingCount").value = p.rating_count || "";
-                document.getElementById("projPoster").value = p.poster || "";
-                document.getElementById("projOriginal").value = p.original || "";
             }
         } else {
             document.getElementById("projName").value = "";
@@ -391,21 +203,12 @@
             document.getElementById("projStart").value = "";
             document.getElementById("projEnd").value = "";
             document.getElementById("projAirDate").value = "";
-            document.getElementById("projTVPlatform").value = "";
-            setPlatformCheckboxes("");
             document.getElementById("projDirector").value = "";
             document.getElementById("projWriter").value = "";
             document.getElementById("projMale1").value = "";
             document.getElementById("projFemale1").value = "";
-            document.getElementById("projMale2").value = "";
-            document.getElementById("projFemale2").value = "";
             document.getElementById("projStudio").value = "";
-            document.getElementById("projProducer").value = "";
-            document.getElementById("projCoProducer").value = "";
             document.getElementById("projRating").value = "";
-            document.getElementById("projRatingCount").value = "";
-            document.getElementById("projPoster").value = "";
-            document.getElementById("projOriginal").value = "";
         }
         document.getElementById("editModal").classList.add("active");
     }
@@ -416,8 +219,6 @@
         let name = document.getElementById("projName").value.trim();
         if(!name) { alert("请填写剧目名称"); return; }
         
-        let selectedPlatforms = getSelectedPlatforms();
-        
         let newData = {
             name: name,
             level: document.getElementById("projLevel").value,
@@ -426,21 +227,12 @@
             start_date: document.getElementById("projStart").value,
             end_date: document.getElementById("projEnd").value,
             air_date: document.getElementById("projAirDate").value,
-            online_platform: selectedPlatforms.join("、"),
-            tv_platform: document.getElementById("projTVPlatform").value,
             director: document.getElementById("projDirector").value,
             writer: document.getElementById("projWriter").value,
             male1: document.getElementById("projMale1").value,
             female1: document.getElementById("projFemale1").value,
-            male2: document.getElementById("projMale2").value,
-            female2: document.getElementById("projFemale2").value,
             studio: document.getElementById("projStudio").value,
-            producer: document.getElementById("projProducer").value,
-            co_producer: document.getElementById("projCoProducer").value,
-            rating: document.getElementById("projRating").value,
-            rating_count: document.getElementById("projRatingCount").value,
-            poster: document.getElementById("projPoster").value,
-            original: document.getElementById("projOriginal").value
+            rating: document.getElementById("projRating").value
         };
         
         let result;
@@ -460,57 +252,27 @@
     
     async function deleteProject(id) {
         let { error } = await supabase.from("projects").delete().eq("id", id);
-        if(error) {
-            alert("删除失败: " + error.message);
-        } else {
-            loadData();
-            closeDetail();
-        }
+        if(error) alert("删除失败: " + error.message);
+        else { loadData(); closeDetail(); }
     }
     
-    function initPlatformEvents() {
-        let otherCb = document.querySelector('#platformCheckGroup input[value="其他"]');
-        let otherGroup = document.getElementById("otherInputGroup");
-        let otherInput = document.getElementById("otherPlatformInput");
-        document.querySelectorAll('#platformCheckGroup input[type="checkbox"]').forEach(cb => {
-            cb.onchange = function() {
-                updateSelectedDisplay();
-                if(otherCb && otherCb.checked) otherGroup.style.display = "flex";
-                else { otherGroup.style.display = "none"; otherInput.value = ""; updateSelectedDisplay(); }
-            };
-        });
-        otherInput.oninput = updateSelectedDisplay;
-        updateSelectedDisplay();
-    }
-    
-    function initFilters() {
-        document.getElementById("levelFilter").onchange = () => { filters.level = document.getElementById("levelFilter").value; renderTable(); };
-        document.getElementById("typeFilter").onchange = () => { filters.type = document.getElementById("typeFilter").value; renderTable(); };
-        document.getElementById("platformFilter").onchange = () => { filters.platform = document.getElementById("platformFilter").value; renderTable(); };
-        document.getElementById("statusFilter").onchange = () => { filters.status = document.getElementById("statusFilter").value; renderTable(); };
-        document.getElementById("resetFilters").onclick = () => {
-            document.getElementById("levelFilter").value = "all";
-            document.getElementById("typeFilter").value = "all";
-            document.getElementById("platformFilter").value = "all";
-            document.getElementById("statusFilter").value = "all";
-            filters = { level: "all", type: "all", platform: "all", status: "all" };
-            renderTable();
-        };
-    }
-    
-    function bindEvents() {
-        document.getElementById("addBtn").onclick = () => openEditModal(null);
-        document.getElementById("closeEditModalBtn").onclick = closeEditModal;
-        document.getElementById("saveProjectBtn").onclick = saveProject;
-        document.getElementById("closeDetailModalBtn").onclick = closeDetail;
-        document.getElementById("editModal").onclick = e => { if(e.target === document.getElementById("editModal")) closeEditModal(); };
-        document.getElementById("detailModal").onclick = e => { if(e.target === document.getElementById("detailModal")) closeDetail(); };
-    }
+    document.getElementById("addBtn").onclick = () => openEditModal(null);
+    document.getElementById("closeEditModalBtn").onclick = closeEditModal;
+    document.getElementById("saveBtn").onclick = saveProject;
+    document.getElementById("closeDetailBtn").onclick = closeDetail;
+    document.getElementById("levelFilter").onchange = () => { currentFilter = document.getElementById("levelFilter").value; renderTable(); };
+    document.getElementById("statusFilter").onchange = () => { statusFilter = document.getElementById("statusFilter").value; renderTable(); };
+    document.getElementById("resetFilters").onclick = () => {
+        document.getElementById("levelFilter").value = "all";
+        document.getElementById("statusFilter").value = "all";
+        currentFilter = "all";
+        statusFilter = "all";
+        renderTable();
+    };
+    document.getElementById("editModal").onclick = e => { if(e.target === document.getElementById("editModal")) closeEditModal(); };
+    document.getElementById("detailModal").onclick = e => { if(e.target === document.getElementById("detailModal")) closeDetail(); };
     
     loadData();
-    initFilters();
-    bindEvents();
-    initPlatformEvents();
 </script>
 </body>
 </html>
