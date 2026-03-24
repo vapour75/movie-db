@@ -58,8 +58,8 @@
     <div class="table-wrapper">
         <table class="project-table">
             <thead><tr><th>剧目名称</th><th>级别</th><th>类型</th><th>集数</th><th>开机</th><th>播出日期</th><th>导演</th><th>编剧</th><th>主演</th><th>状态</th>?</thead>
-            <tbody id="tableBody"><tr><td colspan="10" class="loading">加载数据中...</td></tr></tbody>
-        </table>
+            <tbody id="tableBody">发展<td colspan="10" class="loading">加载数据中...发展发展</tbody>
+        划
     </div>
     <footer style="text-align:center; font-size:11px; margin-top:16px;">点击行查看详情 · 右下角+号添加</footer>
 </div>
@@ -89,111 +89,73 @@
 </div>
 
 <script>
-    // Supabase 配置
-    const SUPABASE_URL = "https://kcggqsgsgkmpuydrytcx.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable__TF7TumQQ-kpNdN-WF64DA_EjcsI0nn";
+    // 配置 - 只有一次
+    const URL = "https://kcggqsgsgkmpuydrytcx.supabase.co";
+    const KEY = "sb_publishable__TF7TumQQ-kpNdN-WF64DA_EjcsI0nn";
     
-    // 只创建一次客户端
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // 创建客户端
+    const db = supabase.createClient(URL, KEY);
     
-    let allProjects = [];
-    let currentEditId = null;
-    let currentFilter = "all";
+    let projects = [];
+    let editId = null;
+    let levelFilter = "all";
     let statusFilter = "all";
 
-    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':m==='>'?'&gt;':m); }
-    function getStatus(p) { if(p.air_date && p.air_date !== "") return "已播出"; if(p.end_date && p.end_date !== "") return "已杀青"; if(p.start_date && p.start_date !== "") return "已开机"; return "待开机"; }
+    function escape(s) { if(!s) return ''; return s.replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':m==='>'?'&gt;':m); }
+    function getStatus(p) { if(p.air_date) return "已播出"; if(p.end_date) return "已杀青"; if(p.start_date) return "已开机"; return "待开机"; }
     function getLevelClass(l) { if(l==="S") return "level-S"; if(l==="A+") return "level-Aplus"; if(l==="A") return "level-A"; return ""; }
-    function getStatusClass(s) { if(s==="已播出") return "status-yibochu"; return ""; }
 
-    async function loadData() {
-        document.getElementById("tableBody").innerHTML = '<tr><td colspan="10" class="loading">加载数据中...</td></tr>';
-        const { data, error } = await supabase.from("projects").select("*").order("id", { ascending: false });
-        if(error) { 
-            console.error(error); 
-            document.getElementById("tableBody").innerHTML = '<tr><td colspan="10" class="loading">加载失败: ' + error.message + '</td></tr>';
-            return; 
-        }
-        allProjects = data || [];
-        updateStats();
-        renderTable();
-    }
-
-    function updateStats() {
-        let total = allProjects.length, kaiji=0, shaqing=0, yibochu=0;
-        for(let p of allProjects) { let s=getStatus(p); if(s==="已播出") yibochu++; else if(s==="已杀青") shaqing++; else if(s==="已开机") kaiji++; }
+    async function load() {
+        document.getElementById("tableBody").innerHTML = '发展<td colspan="10" class="loading">加载中...发展发展';
+        let { data, error } = await db.from("projects").select("*").order("id", {ascending: false});
+        if(error) { document.getElementById("tableBody").innerHTML = '发展<td colspan="10">加载失败发展发展'; return; }
+        projects = data;
+        let total = projects.length, kaiji=0, shaqing=0, yibochu=0;
+        for(let p of projects) { let s=getStatus(p); if(s==="已播出") yibochu++; else if(s==="已杀青") shaqing++; else if(s==="已开机") kaiji++; }
         document.getElementById("statsContainer").innerHTML = '<div class="stat-card"><div class="stat-number">'+total+'</div><div>总项目</div></div><div class="stat-card"><div class="stat-number">'+kaiji+'</div><div>已开机</div></div><div class="stat-card"><div class="stat-number">'+shaqing+'</div><div>已杀青</div></div><div class="stat-card"><div class="stat-number">'+yibochu+'</div><div>已播出</div></div>';
-    }
-
-    function renderTable() {
-        let filtered = allProjects.filter(p => {
-            if(currentFilter !== "all" && p.level !== currentFilter) return false;
-            if(statusFilter !== "all") { let s = getStatus(p); if(s !== statusFilter) return false; }
+        
+        let filtered = projects.filter(p => {
+            if(levelFilter!=="all" && p.level!==levelFilter) return false;
+            if(statusFilter!=="all") { let s=getStatus(p); if(s!==statusFilter) return false; }
             return true;
         });
-        if(filtered.length === 0) { document.getElementById("tableBody").innerHTML = '<tr><td colspan="10" class="loading">暂无数据</td></tr>'; return; }
+        if(filtered.length===0) { document.getElementById("tableBody").innerHTML = '发展<td colspan="10">暂无数据发展发展'; return; }
         let html = "";
         for(let p of filtered) {
-            let status = getStatus(p);
             let actors = [p.male1, p.female1].filter(x=>x).join(" / ");
-            html += `<tr data-id="${p.id}">
-                <td>${escapeHtml(p.name)}</td>
-                <td><span class="level-badge ${getLevelClass(p.level)}">${p.level}级</span></td>
-                <td>${escapeHtml(p.type || "-")}</td>
-                <td>${escapeHtml(p.episodes || "-")}</td>
-                <td>${p.start_date || "-"}</td>
-                <td>${p.air_date || "-"}</td>
-                <td>${escapeHtml(p.director || "-")}</td>
-                <td>${escapeHtml(p.writer || "-")}</td>
-                <td>${escapeHtml(actors)}</td>
-                <td><span class="status-badge ${getStatusClass(status)}">${status}</span></td>
-            </tr>`;
+            html += `<tr data-id="${p.id}"><td>${escape(p.name)}<td><span class="level-badge ${getLevelClass(p.level)}">${p.level}级</span><td>${escape(p.type||"-")}<td>${escape(p.episodes||"-")}<td>${p.start_date||"-"}<td>${p.air_date||"-"}<td>${escape(p.director||"-")}<td>${escape(p.writer||"-")}<td>${escape(actors)}<td><span class="status-badge">${getStatus(p)}</span>发展`;
         }
         document.getElementById("tableBody").innerHTML = html;
-        
-        document.querySelectorAll("#tableBody tr").forEach(row => {
-            row.onclick = () => {
-                let id = parseInt(row.dataset.id);
-                let proj = allProjects.find(p => p.id === id);
-                if(proj) showDetail(proj);
-            };
-        });
+        document.querySelectorAll("#tableBody tr").forEach(r => { r.onclick = () => { let id = parseInt(r.dataset.id); let p = projects.find(x=>x.id===id); if(p) showDetail(p); }; });
     }
-
+    
     function showDetail(p) {
-        let status = getStatus(p);
-        document.getElementById("detailContent").innerHTML = `
-            <div class="detail-block"><h3>${escapeHtml(p.name)}</h3><div><span class="level-badge ${getLevelClass(p.level)}">${p.level}级</span> <span class="status-badge">${status}</span></div></div>
-            <div class="detail-block"><strong>类型/集数</strong> ${escapeHtml(p.type||"-")} / ${p.episodes||"-"}<br><strong>开机/杀青/播出</strong> ${p.start_date||"-"} / ${p.end_date||"-"} / ${p.air_date||"-"}</div>
-            <div class="detail-block"><strong>导演/编剧</strong> ${escapeHtml(p.director||"-")} / ${escapeHtml(p.writer||"-")}<br><strong>主演</strong> ${p.male1||"-"} ${p.female1?"/ "+p.female1:""}</div>
-            <div class="detail-block"><strong>出品/制作</strong> ${escapeHtml(p.studio||"-")}<br><strong>豆瓣评分</strong> ${p.rating||"-"}</div>
-        `;
-        document.getElementById("editDetailBtn").onclick = () => { closeDetail(); openEditModal(p.id); };
-        document.getElementById("deleteDetailBtn").onclick = () => { if(confirm("删除？")) deleteProject(p.id); };
+        document.getElementById("detailContent").innerHTML = `<div class="detail-block"><h3>${escape(p.name)}</h3><div><span class="level-badge ${getLevelClass(p.level)}">${p.level}级</span> <span class="status-badge">${getStatus(p)}</span></div></div><div class="detail-block"><strong>类型/集数</strong> ${escape(p.type||"-")} / ${p.episodes||"-"}<br><strong>开机/杀青/播出</strong> ${p.start_date||"-"} / ${p.end_date||"-"} / ${p.air_date||"-"}</div><div class="detail-block"><strong>导演/编剧</strong> ${escape(p.director||"-")} / ${escape(p.writer||"-")}<br><strong>主演</strong> ${p.male1||"-"} ${p.female1?"/ "+p.female1:""}</div><div class="detail-block"><strong>出品/制作</strong> ${escape(p.studio||"-")}<br><strong>豆瓣评分</strong> ${p.rating||"-"}</div>`;
+        document.getElementById("editDetailBtn").onclick = () => { closeDetail(); openEdit(p.id); };
+        document.getElementById("deleteDetailBtn").onclick = () => { if(confirm("删除？")) deleteItem(p.id); };
         document.getElementById("detailModal").classList.add("active");
     }
-    
     function closeDetail() { document.getElementById("detailModal").classList.remove("active"); }
     
-    function openEditModal(id) {
-        currentEditId = id;
-        document.getElementById("modalTitle").innerText = id ? "编辑项目" : "添加项目";
+    function openEdit(id) {
+        editId = id;
+        document.getElementById("modalTitle").innerText = id ? "编辑" : "添加";
         if(id) {
-            let p = allProjects.find(x => x.id === id);
+            let p = projects.find(x=>x.id===id);
             if(p) {
                 document.getElementById("projName").value = p.name;
                 document.getElementById("projLevel").value = p.level;
-                document.getElementById("projType").value = p.type || "";
-                document.getElementById("projEpisodes").value = p.episodes || "";
-                document.getElementById("projStart").value = p.start_date || "";
-                document.getElementById("projEnd").value = p.end_date || "";
-                document.getElementById("projAirDate").value = p.air_date || "";
-                document.getElementById("projDirector").value = p.director || "";
-                document.getElementById("projWriter").value = p.writer || "";
-                document.getElementById("projMale1").value = p.male1 || "";
-                document.getElementById("projFemale1").value = p.female1 || "";
-                document.getElementById("projStudio").value = p.studio || "";
-                document.getElementById("projRating").value = p.rating || "";
+                document.getElementById("projType").value = p.type||"";
+                document.getElementById("projEpisodes").value = p.episodes||"";
+                document.getElementById("projStart").value = p.start_date||"";
+                document.getElementById("projEnd").value = p.end_date||"";
+                document.getElementById("projAirDate").value = p.air_date||"";
+                document.getElementById("projDirector").value = p.director||"";
+                document.getElementById("projWriter").value = p.writer||"";
+                document.getElementById("projMale1").value = p.male1||"";
+                document.getElementById("projFemale1").value = p.female1||"";
+                document.getElementById("projStudio").value = p.studio||"";
+                document.getElementById("projRating").value = p.rating||"";
             }
         } else {
             document.getElementById("projName").value = "";
@@ -212,14 +174,12 @@
         }
         document.getElementById("editModal").classList.add("active");
     }
+    function closeEdit() { document.getElementById("editModal").classList.remove("active"); editId=null; }
     
-    function closeEditModal() { document.getElementById("editModal").classList.remove("active"); currentEditId = null; }
-    
-    async function saveProject() {
+    async function save() {
         let name = document.getElementById("projName").value.trim();
-        if(!name) { alert("请填写剧目名称"); return; }
-        
-        let newData = {
+        if(!name) { alert("请输入剧名"); return; }
+        let data = {
             name: name,
             level: document.getElementById("projLevel").value,
             type: document.getElementById("projType").value,
@@ -234,45 +194,35 @@
             studio: document.getElementById("projStudio").value,
             rating: document.getElementById("projRating").value
         };
-        
-        let result;
-        if(currentEditId) {
-            result = await supabase.from("projects").update(newData).eq("id", currentEditId);
-        } else {
-            result = await supabase.from("projects").insert([newData]);
-        }
-        
-        if(result.error) {
-            alert("保存失败: " + result.error.message);
-        } else {
-            loadData();
-            closeEditModal();
-        }
+        let r;
+        if(editId) r = await db.from("projects").update(data).eq("id", editId);
+        else r = await db.from("projects").insert([data]);
+        if(r.error) alert("失败: "+r.error.message);
+        else { load(); closeEdit(); }
     }
     
-    async function deleteProject(id) {
-        let { error } = await supabase.from("projects").delete().eq("id", id);
-        if(error) alert("删除失败: " + error.message);
-        else { loadData(); closeDetail(); }
+    async function deleteItem(id) {
+        let {error} = await db.from("projects").delete().eq("id", id);
+        if(error) alert("删除失败");
+        else { load(); closeDetail(); }
     }
     
-    document.getElementById("addBtn").onclick = () => openEditModal(null);
-    document.getElementById("closeEditModalBtn").onclick = closeEditModal;
-    document.getElementById("saveBtn").onclick = saveProject;
+    document.getElementById("addBtn").onclick = () => openEdit(null);
+    document.getElementById("closeEditModalBtn").onclick = closeEdit;
+    document.getElementById("saveBtn").onclick = save;
     document.getElementById("closeDetailBtn").onclick = closeDetail;
-    document.getElementById("levelFilter").onchange = () => { currentFilter = document.getElementById("levelFilter").value; renderTable(); };
-    document.getElementById("statusFilter").onchange = () => { statusFilter = document.getElementById("statusFilter").value; renderTable(); };
+    document.getElementById("levelFilter").onchange = () => { levelFilter = document.getElementById("levelFilter").value; load(); };
+    document.getElementById("statusFilter").onchange = () => { statusFilter = document.getElementById("statusFilter").value; load(); };
     document.getElementById("resetFilters").onclick = () => {
         document.getElementById("levelFilter").value = "all";
         document.getElementById("statusFilter").value = "all";
-        currentFilter = "all";
-        statusFilter = "all";
-        renderTable();
+        levelFilter = "all"; statusFilter = "all";
+        load();
     };
-    document.getElementById("editModal").onclick = e => { if(e.target === document.getElementById("editModal")) closeEditModal(); };
+    document.getElementById("editModal").onclick = e => { if(e.target === document.getElementById("editModal")) closeEdit(); };
     document.getElementById("detailModal").onclick = e => { if(e.target === document.getElementById("detailModal")) closeDetail(); };
     
-    loadData();
+    load();
 </script>
 </body>
 </html>
