@@ -89,11 +89,12 @@
                     <th>网播平台</th><th>台播平台</th>
                     <th>导演</th><th>编剧</th><th>男主</th><th>女主</th><th>男二</th><th>女二</th>
                     <th>出品/制作</th><th>豆瓣评分</th><th>评分人次</th><th>状态</th>
-                 '</thead>
+                </tr>
+            </thead>
             <tbody id="tableBody">
-                发展<td colspan="19" class="loading">加载数据中...发展发展
+                <tr><td colspan="19" class="loading">加载数据中...</td></tr>
             </tbody>
-        划
+        </table>
     </div>
     <footer>点击行查看详情 · 长按行可编辑/删除 · 右下角+号添加</footer>
 </div>
@@ -220,10 +221,10 @@
     }
 
     async function load() {
-        document.getElementById("tableBody").innerHTML = '发展<td colspan="19" class="loading">加载数据中...发展发展';
+        document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="loading">加载数据中...</td></tr>';
         let { data, error } = await client.from("projects").select("*").order("id", { ascending: false });
         if(error) {
-            document.getElementById("tableBody").innerHTML = '发展<td colspan="19" class="loading">加载失败: ' + error.message + '发展发展';
+            document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="loading">加载失败: ' + error.message + '</td></tr>';
             return;
         }
         projects = data || [];
@@ -241,7 +242,7 @@
         });
 
         if(filtered.length === 0) {
-            document.getElementById("tableBody").innerHTML = '发展<td colspan="19" class="loading">暂无数据发展发展';
+            document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="loading">暂无数据</td></tr>';
             return;
         }
 
@@ -250,26 +251,26 @@
             let status = getStatus(p);
             let ratingDisplay = p.rating ? '<span class="rating-badge ' + getRatingClass(p.rating) + '">' + p.rating + '</span>' : "-";
             html += '<tr data-id="' + p.id + '">';
-            html += '<td style="font-weight:500;">' + h(p.name) + '发展';
-            html += '|<span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span>发展';
-            html += '|' + h(p.type || "-") + '发展';
-            html += '|' + h(p.episodes || "-") + '发展';
-            html += '|' + (p.start_date || "-") + '发展';
-            html += '|' + (p.end_date || "-") + '发展';
-            html += '|' + (p.air_date || "-") + '发展';
-            html += '|' + h(p.online_platform || "-") + '发展';
-            html += '|' + h(p.tv_platform || "-") + '发展';
-            html += '|' + h(p.director || "-") + '发展';
-            html += '|' + h(p.writer || "-") + '发展';
-            html += '|' + h(p.male1 || "-") + '发展';
-            html += '|' + h(p.female1 || "-") + '发展';
-            html += '|' + h(p.male2 || "-") + '发展';
-            html += '|' + h(p.female2 || "-") + '发展';
-            html += '|' + h(p.studio || "-") + '发展';
-            html += '|' + ratingDisplay + '发展';
-            html += '|' + formatCount(p.rating_count) + '发展';
-            html += '|<span class="status-badge ' + getStatusClass(status) + '">' + status + '</span>发展';
-            html += '发展';
+            html += '<td style="font-weight:500;">' + h(p.name) + '</td>';
+            html += '<td><span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span></td>';
+            html += '<td>' + h(p.type || "-") + '</td>';
+            html += '<td>' + h(p.episodes || "-") + '</td>';
+            html += '<td>' + (p.start_date || "-") + '</td>';
+            html += '<td>' + (p.end_date || "-") + '</td>';
+            html += '<td>' + (p.air_date || "-") + '</td>';
+            html += '<td>' + h(p.online_platform || "-") + '</td>';
+            html += '<td>' + h(p.tv_platform || "-") + '</td>';
+            html += '<td>' + h(p.director || "-") + '</td>';
+            html += '<td>' + h(p.writer || "-") + '</td>';
+            html += '<td>' + h(p.male1 || "-") + '</td>';
+            html += '<td>' + h(p.female1 || "-") + '</td>';
+            html += '<td>' + h(p.male2 || "-") + '</td>';
+            html += '<td>' + h(p.female2 || "-") + '</td>';
+            html += '<td>' + h(p.studio || "-") + '</td>';
+            html += '<td>' + ratingDisplay + '</td>';
+            html += '<td>' + formatCount(p.rating_count) + '</td>';
+            html += '<td><span class="status-badge ' + getStatusClass(status) + '">' + status + '</span></td>';
+            html += '</tr>';
         }
         document.getElementById("tableBody").innerHTML = html;
 
