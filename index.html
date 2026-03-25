@@ -614,7 +614,7 @@
         
         const tbody = document.getElementById("peopleTableBody");
         if (filtered.length === 0) {
-            tbody.innerHTML = '发展<td colspan="5" class="loading">暂无影人数据发展发展';
+            tbody.innerHTML = '<td colspan="5" class="loading">暂无影人数据';
             return;
         }
         
@@ -626,7 +626,7 @@
                 <td><span class="score-badge">${p.totalScore.toFixed(2)}</span></td>
                 <td>${p.worksCount}</td>
                 <td><button class="view-person-btn" data-id="${p.id}">详情</button></td>
-            发展`;
+            `;
         }
         tbody.innerHTML = html;
         
