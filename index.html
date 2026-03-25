@@ -250,11 +250,11 @@
             let qualityWeight = getQualityWeight(p.rating);
             return rating * voteWeight * qualityWeight;
         } else if (p.end_date && p.end_date !== "") {
-            return 7.0;
+            return 5.0;
         } else if (p.start_date && p.start_date !== "") {
-            return 6.0;
+            return 4.5;
         } else {
-            return 4.0;
+            return 3.0;
         }
     }
 
