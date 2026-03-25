@@ -519,27 +519,27 @@
     async function syncPeopleForProject(projectId, projectData) {
         let personRoles = [];
         
-        if (projectData.director) {
+        if (projectData.director && projectData.director.trim() !== "") {
             let directors = projectData.director.split(/[、,，]/).map(s => s.trim()).filter(s => s);
             for (let d of directors) personRoles.push({ name: d, role: '导演' });
         }
-        if (projectData.writer) {
+        if (projectData.writer && projectData.writer.trim() !== "") {
             let writers = projectData.writer.split(/[、,，]/).map(s => s.trim()).filter(s => s);
             for (let w of writers) personRoles.push({ name: w, role: '编剧' });
         }
-        if (projectData.male1) {
+        if (projectData.male1 && projectData.male1.trim() !== "") {
             let male1s = projectData.male1.split(/[、,，]/).map(s => s.trim()).filter(s => s);
             for (let m of male1s) personRoles.push({ name: m, role: '男主' });
         }
-        if (projectData.female1) {
+        if (projectData.female1 && projectData.female1.trim() !== "") {
             let female1s = projectData.female1.split(/[、,，]/).map(s => s.trim()).filter(s => s);
             for (let f of female1s) personRoles.push({ name: f, role: '女主' });
         }
-        if (projectData.male2) {
+        if (projectData.male2 && projectData.male2.trim() !== "") {
             let male2s = projectData.male2.split(/[、,，]/).map(s => s.trim()).filter(s => s);
             for (let m of male2s) personRoles.push({ name: m, role: '男二' });
         }
-        if (projectData.female2) {
+        if (projectData.female2 && projectData.female2.trim() !== "") {
             let female2s = projectData.female2.split(/[、,，]/).map(s => s.trim()).filter(s => s);
             for (let f of female2s) personRoles.push({ name: f, role: '女二' });
         }
@@ -684,7 +684,7 @@
                 <td><span class="score-badge">${p.totalScore.toFixed(2)}</span></td>
                 <td>${p.worksCount}</td>
                 <td><button class="view-person-btn" data-id="${p.id}">详情</button></td>
-            发展`;
+            </tr>`;
         }
         tbody.innerHTML = html;
         
