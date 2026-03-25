@@ -8,21 +8,30 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f7fb; padding: 16px; }
+        .container { max-width: 100%; overflow-x: auto; }
         .header { margin-bottom: 20px; }
         .header h1 { font-size: 24px; }
         .stats { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
         .stat-card { background: white; border-radius: 12px; padding: 12px; flex: 1; min-width: 70px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .stat-number { font-size: 24px; font-weight: bold; }
-        .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .tabs { display: flex; gap: 12px; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        .tab-btn { background: none; border: none; padding: 8px 20px; font-size: 16px; cursor: pointer; border-radius: 20px; transition: all 0.2s; }
+        .tab-btn.active { background: #1e293b; color: white; }
+        .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; align-items: center; }
         .filter-group { background: white; padding: 6px 12px; border-radius: 20px; border: 1px solid #ddd; display: flex; align-items: center; gap: 8px; }
         .filter-group select { border: none; background: none; font-size: 14px; }
         .reset-btn { background: #e2e8f0; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; }
-        .table-wrapper { overflow-x: auto; background: white; border-radius: 16px; border: 1px solid #edf2f7; }
+        .table-wrapper { overflow-x: auto; background: white; border-radius: 16px; border: 1px solid #edf2f7; margin-bottom: 16px; }
         .project-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1600px; }
         .project-table th { background: #f8fafc; padding: 10px 6px; text-align: left; font-weight: 600; border-bottom: 1px solid #e2e8f0; }
         .project-table td { padding: 10px 6px; border-bottom: 1px solid #f1f5f9; }
         .project-table tr { cursor: pointer; }
         .project-table tr:hover { background: #f8fafc; }
+        .people-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .people-table th { background: #f8fafc; padding: 12px; text-align: left; font-weight: 600; border-bottom: 1px solid #e2e8f0; }
+        .people-table td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
+        .people-table tr { cursor: pointer; }
+        .people-table tr:hover { background: #f8fafc; }
         .level-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
         .level-S { background: #fef3c7; color: #b45309; }
         .level-A { background: #dbeafe; color: #1e40af; }
@@ -34,7 +43,8 @@
         .status-yikaiji { background: #dbeafe; color: #1e40af; }
         .rating-badge { display: inline-block; padding: 2px 6px; border-radius: 10px; font-size: 10px; background: #fef3c7; color: #b45309; }
         .rating-high { background: #dcfce7; color: #166534; }
-        .fab { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; background: #1e293b; color: white; border-radius: 25px; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .score-badge { font-weight: bold; color: #f59e0b; font-size: 16px; }
+        .fab { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; background: #1e293b; color: white; border-radius: 25px; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 100; }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; justify-content: center; visibility: hidden; opacity: 0; transition: 0.2s; z-index: 200; }
         .modal-overlay.active { visibility: visible; opacity: 1; }
         .modal-drawer { background: white; width: 100%; max-width: 700px; border-radius: 20px 20px 0 0; max-height: 80vh; overflow-y: auto; padding: 20px; transform: translateY(100%); transition: transform 0.3s; }
@@ -65,6 +75,8 @@
         .poster-image { width: 120px; height: 160px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #f1f5f9; }
         .poster-placeholder { width: 120px; height: 160px; background: #f1f5f9; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 12px; text-align: center; }
         .poster-container { display: flex; gap: 20px; margin-bottom: 16px; flex-wrap: wrap; }
+        .view-person-btn { background: #3b82f6; color: white; border: none; padding: 4px 12px; border-radius: 16px; cursor: pointer; font-size: 11px; }
+        .people-filters { margin-bottom: 16px; }
     </style>
 </head>
 <body>
@@ -74,33 +86,67 @@
         <p>剧目级别 · 类型 · 主创团队 · 进度追踪 · 豆瓣评分 · 多人共享</p>
     </div>
     <div class="stats" id="statsContainer"></div>
-    <div class="filters">
-        <div class="filter-group"><label>级别</label><select id="levelFilter"><option value="all">全部</option><option value="S">S级</option><option value="A+">A+级</option><option value="A">A级</option><option value="B+">B+级</option></select></div>
-        <div class="filter-group"><label>类型</label><select id="typeFilter"><option value="all">全部</option><option value="古装">古装</option><option value="都市">都市</option><option value="历史">历史</option><option value="犯罪">犯罪</option></select></div>
-        <div class="filter-group"><label>网播平台</label><select id="platformFilter"><option value="all">全部</option><option value="腾讯视频">腾讯视频</option><option value="爱奇艺">爱奇艺</option><option value="优酷">优酷</option></select></div>
-        <div class="filter-group"><label>状态</label><select id="statusFilter"><option value="all">全部</option><option value="已播出">已播出</option><option value="已杀青">已杀青</option><option value="已开机">已开机</option></select></div>
-        <button class="reset-btn" id="resetFilters">重置</button>
+
+    <!-- Tab 切换 -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="projects">📋 项目</button>
+        <button class="tab-btn" data-tab="people">⭐ 影人排行榜</button>
     </div>
-    <div class="table-wrapper">
-        <table class="project-table">
-            <thead>
-                <tr>
-                    <th>剧目名称</th><th>级别</th><th>类型</th><th>集数</th><th>开机</th><th>杀青</th><th>播出日期</th>
-                    <th>网播平台</th><th>台播平台</th>
-                    <th>导演</th><th>编剧</th><th>男主</th><th>女主</th><th>男二</th><th>女二</th>
-                    <th>出品/制作</th><th>豆瓣评分</th><th>评分人次</th><th>状态</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody">
-                <tr><td colspan="19" class="loading">加载数据中...</td></tr>
+
+    <!-- 项目视图 -->
+    <div id="projectsView">
+        <div class="filters" id="projectFilters">
+            <div class="filter-group"><label>级别</label><select id="levelFilter"><option value="all">全部</option><option value="S">S级</option><option value="A+">A+级</option><option value="A">A级</option><option value="B+">B+级</option></select></div>
+            <div class="filter-group"><label>类型</label><select id="typeFilter"><option value="all">全部</option><option value="古装">古装</option><option value="都市">都市</option><option value="历史">历史</option><option value="犯罪">犯罪</option></select></div>
+            <div class="filter-group"><label>网播平台</label><select id="platformFilter"><option value="all">全部</option><option value="腾讯视频">腾讯视频</option><option value="爱奇艺">爱奇艺</option><option value="优酷">优酷</option></select></div>
+            <div class="filter-group"><label>状态</label><select id="statusFilter"><option value="all">全部</option><option value="已播出">已播出</option><option value="已杀青">已杀青</option><option value="已开机">已开机</option></select></div>
+            <button class="reset-btn" id="resetFilters">重置</button>
+        </div>
+        <div class="table-wrapper">
+            <table class="project-table">
+                <thead>
+                    <tr>
+                        <th>剧目名称</th><th>级别</th><th>类型</th><th>集数</th><th>开机</th><th>杀青</th><th>播出日期</th>
+                        <th>网播平台</th><th>台播平台</th>
+                        <th>导演</th><th>编剧</th><th>男主</th><th>女主</th><th>男二</th><th>女二</th>
+                        <th>出品/制作</th><th>豆瓣评分</th><th>评分人次</th><th>状态</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"><tr><td colspan="19" class="loading">加载数据中...</td></tr>
             </tbody>
-        </table>
+            </table>
+        </div>
     </div>
-    <footer>点击行查看详情 · 长按行可编辑/删除 · 右下角+号添加</footer>
+
+    <!-- 影人视图 -->
+    <div id="peopleView" style="display:none;">
+        <div class="people-filters">
+            <div class="filter-group">
+                <label>职业</label>
+                <select id="peopleRoleFilter">
+                    <option value="all">全部职业</option>
+                    <option value="导演">导演</option>
+                    <option value="编剧">编剧</option>
+                    <option value="演员">演员</option>
+                </select>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table class="people-table">
+                <thead>
+                    <tr><th>姓名</th><th>职业</th><th>综合得分</th><th>代表作数量</th><th>操作</th></tr>
+                </thead>
+                <tbody id="peopleTableBody"><tr><td colspan="5" class="loading">加载影人数据...</td></tr>
+            </tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer>点击行查看详情 · 长按行可编辑/删除 · 右下角+号添加项目</footer>
 </div>
 <button class="fab" id="addBtn">+</button>
 
-<!-- 编辑模态框 -->
+<!-- 项目编辑模态框 -->
 <div id="editModal" class="modal-overlay">
     <div class="modal-drawer">
         <div style="display:flex; justify-content:space-between; margin-bottom:16px;"><span id="modalTitle" style="font-size:18px; font-weight:bold;">添加项目</span><button id="closeEditModalBtn" style="background:none; border:none; font-size:24px;">&times;</button></div>
@@ -125,18 +171,26 @@
         <div class="form-row"><div class="form-group"><label>男二</label><input type="text" id="projMale2"></div><div class="form-group"><label>女二</label><input type="text" id="projFemale2"></div></div>
         <div class="form-row"><div class="form-group"><label>出品/制作</label><input type="text" id="projStudio"></div><div class="form-group"><label>总制片人</label><input type="text" id="projProducer"></div></div>
         <div class="form-row"><div class="form-group"><label>制片人</label><input type="text" id="projCoProducer"></div><div class="form-group"><label>豆瓣评分</label><input type="text" id="projRating" placeholder="如：8.5"></div></div>
-        <div class="form-row"><div class="form-group"><label>豆瓣评分人次</label><input type="text" id="projRatingCount" placeholder="如：382000"></div><div class="form-group"><label>海报图片URL</label><input type="text" id="projPoster" placeholder="Cloudinary Public ID 或完整URL"></div></div>
+        <div class="form-row"><div class="form-group"><label>豆瓣评分人次</label><input type="text" id="projRatingCount" placeholder="如：382000"></div><div class="form-group"><label>海报图片URL</label><input type="text" id="projPoster" placeholder="图片 public_id 或完整URL"></div></div>
         <div class="form-group"><label>原著</label><input type="text" id="projOriginal"></div>
         <button class="btn-submit" id="saveBtn">保存</button>
     </div>
 </div>
 
-<!-- 详情模态框 -->
+<!-- 项目详情模态框 -->
 <div id="detailModal" class="modal-overlay">
     <div class="modal-drawer">
         <div style="display:flex; justify-content:space-between;"><span style="font-size:18px; font-weight:bold;">项目详情</span><button id="closeDetailBtn" style="background:none; border:none; font-size:24px;">&times;</button></div>
         <div id="detailContent"></div>
         <div class="button-group"><button class="btn-submit btn-edit" id="editDetailBtn">编辑</button><button class="btn-submit btn-delete" id="deleteDetailBtn">删除</button></div>
+    </div>
+</div>
+
+<!-- 影人详情模态框 -->
+<div id="personDetailModal" class="modal-overlay">
+    <div class="modal-drawer">
+        <div style="display:flex; justify-content:space-between;"><span style="font-size:18px; font-weight:bold;">影人详情</span><button id="closePersonDetailBtn" style="background:none; border:none; font-size:24px;">&times;</button></div>
+        <div id="personDetailContent"></div>
     </div>
 </div>
 
@@ -149,23 +203,90 @@
     const MY_KEY = "sb_publishable__TF7TumQQ-kpNdN-WF64DA_EjcsI0nn";
     const client = supabase.createClient(MY_URL, MY_KEY);
 
-    // ========== Cloudinary 配置（请替换为你的 Cloud name）==========
-    const CLOUD_NAME = "dzklapat6";  // ← 改成你的 Cloudinary Cloud name
-    const CLOUDINARY_BASE = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/`;
+    // ========== Cloudinary 配置 ==========
+    const CLOUDINARY_CLOUD_NAME = "yourcloud";
+    const CLOUDINARY_BASE_URL = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/`;
 
-    // 生成图片 URL
     function getPosterUrl(poster) {
         if (!poster) return null;
-        if (poster.startsWith('http://') || poster.startsWith('https://')) {
-            return poster;
-        }
-        return CLOUDINARY_BASE + poster;
+        if (poster.startsWith('http://') || poster.startsWith('https://')) return poster;
+        return CLOUDINARY_BASE_URL + poster;
     }
 
+    // ========== 评分权重函数 ==========
+    function getVoteWeight(count) {
+        if (!count) return 1.0;
+        let num = parseFloat(count);
+        if (isNaN(num)) return 1.0;
+        if (num >= 1000000) return 1.5;
+        if (num >= 500000) return 1.4;
+        if (num >= 300000) return 1.3;
+        if (num >= 200000) return 1.2;
+        if (num >= 100000) return 1.1;
+        if (num >= 50000) return 1.0;
+        if (num >= 10000) return 0.9;
+        return 0.8;
+    }
+
+    function getQualityWeight(rating) {
+        if (!rating) return 1.0;
+        let r = parseFloat(rating);
+        if (isNaN(r)) return 1.0;
+        if (r >= 9.0) return 1.3;
+        if (r >= 8.5) return 1.2;
+        if (r >= 8.0) return 1.1;
+        if (r >= 7.5) return 1.0;
+        if (r >= 7.0) return 0.95;
+        if (r >= 6.5) return 0.90;
+        if (r >= 6.0) return 0.85;
+        return 0.80;
+    }
+
+    function getProjectBaseScore(p) {
+        if (p.air_date && p.air_date !== "") {
+            let rating = parseFloat(p.rating);
+            if (isNaN(rating)) return 0;
+            let voteWeight = getVoteWeight(p.rating_count);
+            let qualityWeight = getQualityWeight(p.rating);
+            return rating * voteWeight * qualityWeight;
+        } else if (p.end_date && p.end_date !== "") {
+            return 7.0;
+        } else if (p.start_date && p.start_date !== "") {
+            return 6.0;
+        } else {
+            return 4.0;
+        }
+    }
+
+    function getRoleWeight(role, personName, project) {
+        if (role === '导演') {
+            const directors = project.director ? project.director.split(/[、,，]/).map(s => s.trim()) : [];
+            const index = directors.findIndex(n => n === personName);
+            if (index === 0) return 1.0;
+            if (index === 1) return 0.6;
+            return 0.3;
+        }
+        if (role === '编剧') {
+            const writers = project.writer ? project.writer.split(/[、,，]/).map(s => s.trim()) : [];
+            const index = writers.findIndex(n => n === personName);
+            if (index === 0) return 1.0;
+            if (index === 1) return 0.6;
+            return 0.3;
+        }
+        if (role === '男主' || role === '女主') return 1.0;
+        if (role === '男二' || role === '女二') return 0.5;
+        return 0;
+    }
+
+    // ========== 全局变量 ==========
     let projects = [];
+    let peopleData = [];
+    let peopleScores = [];
     let currentId = null;
     let filters = { level: "all", type: "all", platform: "all", status: "all" };
+    let currentTab = "projects";
 
+    // ========== 通用函数 ==========
     function h(s) { if(!s) return ''; return s.replace(/[&<>]/g, function(m){ return m==='&'?'&amp;':m==='<'?'&lt;':m==='>'?'&gt;':m;}); }
     function getStatus(p) { if(p.air_date && p.air_date !== "") return "已播出"; if(p.end_date && p.end_date !== "") return "已杀青"; if(p.start_date && p.start_date !== "") return "已开机"; return "待开机"; }
     function getStatusClass(s) { if(s==="已播出") return "status-yibochu"; if(s==="已杀青") return "status-yishaqing"; if(s==="已开机") return "status-yikaiji"; return ""; }
@@ -174,6 +295,7 @@
     function formatCount(c) { if(!c) return "-"; if(c.toString().indexOf("万")!==-1) return c; var n=parseFloat(c); if(isNaN(n)) return c; if(n>=10000) return (n/10000).toFixed(1)+"万"; return n.toString(); }
     function hasPlatform(str, target) { if(!str) return false; return str.indexOf(target) !== -1; }
 
+    // ========== 项目相关函数 ==========
     function getSelectedPlatforms() {
         let selected = [];
         document.querySelectorAll('#platformCheckGroup input[type="checkbox"]').forEach(cb => {
@@ -220,19 +342,22 @@
         updateSelectedDisplay();
     }
 
-    async function load() {
+    async function loadProjects() {
         document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="loading">加载数据中...</td></tr>';
         let { data, error } = await client.from("projects").select("*").order("id", { ascending: false });
-        if(error) {
-            document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="loading">加载失败: ' + error.message + '</td></tr>';
-            return;
-        }
+        if(error) { console.error(error); return; }
         projects = data || [];
+        updateStats();
+        renderProjectsTable();
+    }
 
+    function updateStats() {
         let total = projects.length, kaiji=0, shaqing=0, yibochu=0;
         for(let p of projects) { let s = getStatus(p); if(s==="已播出") yibochu++; else if(s==="已杀青") shaqing++; else if(s==="已开机") kaiji++; }
         document.getElementById("statsContainer").innerHTML = '<div class="stat-card"><div class="stat-number">'+total+'</div><div>总项目</div></div><div class="stat-card"><div class="stat-number">'+kaiji+'</div><div>已开机</div></div><div class="stat-card"><div class="stat-number">'+shaqing+'</div><div>已杀青</div></div><div class="stat-card"><div class="stat-number">'+yibochu+'</div><div>已播出</div></div>';
+    }
 
+    function renderProjectsTable() {
         let filtered = projects.filter(p => {
             if(filters.level !== "all" && p.level !== filters.level) return false;
             if(filters.type !== "all" && p.type && p.type.indexOf(filters.type) === -1) return false;
@@ -240,12 +365,7 @@
             if(filters.status !== "all") { let s = getStatus(p); if(s !== filters.status) return false; }
             return true;
         });
-
-        if(filtered.length === 0) {
-            document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="loading">暂无数据</td></tr>';
-            return;
-        }
-
+        if(filtered.length === 0) { document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="loading">暂无数据</td></tr>'; return; }
         let html = "";
         for(let p of filtered) {
             let status = getStatus(p);
@@ -273,53 +393,15 @@
             html += '</tr>';
         }
         document.getElementById("tableBody").innerHTML = html;
-
-        // 绑定点击事件
         document.querySelectorAll("#tableBody tr").forEach(row => {
-            row.onclick = () => {
-                let id = parseInt(row.getAttribute("data-id"));
-                let p = projects.find(x => x.id === id);
-                if(p) showDetail(p);
-            };
+            row.onclick = () => { let id = parseInt(row.dataset.id); let p = projects.find(x => x.id === id); if(p) showProjectDetail(p); };
         });
-        bindLongPress();
     }
 
-    function bindLongPress() {
-        let timer;
-        let rows = document.querySelectorAll("#tableBody tr");
-        let menu = document.getElementById("actionMenu");
-        rows.forEach(row => {
-            row.addEventListener('mousedown', () => {
-                timer = setTimeout(() => {
-                    let id = parseInt(row.getAttribute("data-id"));
-                    let p = projects.find(x => x.id === id);
-                    if(p) {
-                        let rect = row.getBoundingClientRect();
-                        menu.style.left = rect.left + 10 + "px";
-                        menu.style.top = rect.bottom + 5 + "px";
-                        menu.style.opacity = "1";
-                        menu.style.visibility = "visible";
-                        document.getElementById("menuEditBtn").onclick = () => { hideMenu(); openEdit(p.id); };
-                        document.getElementById("menuDeleteBtn").onclick = () => { hideMenu(); if(confirm("删除《" + p.name + "》？")) deleteItem(p.id); };
-                        let hint = document.getElementById("longpressHint");
-                        hint.style.opacity = "1";
-                        setTimeout(() => hint.style.opacity = "0", 800);
-                    }
-                }, 500);
-            });
-            row.addEventListener('mouseup', () => { clearTimeout(timer); });
-            row.addEventListener('mouseleave', () => { clearTimeout(timer); });
-        });
-        document.addEventListener('click', function(e) { if(!menu.contains(e.target)) hideMenu(); });
-    }
-    function hideMenu() { let menu = document.getElementById("actionMenu"); menu.style.opacity = "0"; menu.style.visibility = "hidden"; }
-
-    function showDetail(p) {
+    function showProjectDetail(p) {
         let actors = [p.male1, p.female1, p.male2, p.female2].filter(x=>x && x!=="").join(" / ");
         let posterUrl = getPosterUrl(p.poster);
         let posterHtml = posterUrl ? "<img class='poster-image' src='" + h(posterUrl) + "' onerror=\"this.onerror=null; this.parentElement.innerHTML='<div class=\\'poster-placeholder\\'>图片加载失败</div>';\">" : "<div class='poster-placeholder'>暂无海报</div>";
-
         let detail = '<div class="poster-container">' + posterHtml + '<div class="poster-info">';
         detail += '<div style="margin-bottom:8px;"><span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span> <span class="status-badge ' + getStatusClass(getStatus(p)) + '">' + getStatus(p) + '</span></div>';
         detail += '<h3>' + h(p.name) + '</h3></div></div>';
@@ -330,7 +412,7 @@
         detail += '<div class="detail-block"><strong>豆瓣评分</strong> ' + (p.rating||"-") + ' (' + formatCount(p.rating_count) + ')<br><strong>原著</strong> ' + h(p.original||"-") + '</div>';
         document.getElementById("detailContent").innerHTML = detail;
         document.getElementById("editDetailBtn").onclick = () => { closeDetail(); openEdit(p.id); };
-        document.getElementById("deleteDetailBtn").onclick = () => { if(confirm("删除《" + p.name + "》？")) deleteItem(p.id); };
+        document.getElementById("deleteDetailBtn").onclick = () => { if(confirm("删除《" + p.name + "》？")) deleteProject(p.id); };
         document.getElementById("detailModal").classList.add("active");
     }
 
@@ -397,7 +479,7 @@
 
     function closeEdit() { document.getElementById("editModal").classList.remove("active"); currentId = null; }
 
-    async function save() {
+    async function saveProject() {
         let name = document.getElementById("projName").value.trim();
         if(!name) { alert("请填写剧目名称"); return; }
         let selected = getSelectedPlatforms();
@@ -429,13 +511,217 @@
         if(currentId) result = await client.from("projects").update(data).eq("id", currentId);
         else result = await client.from("projects").insert([data]);
         if(result.error) alert("保存失败: " + result.error.message);
-        else { load(); closeEdit(); }
+        else { loadProjects(); closeEdit(); }
     }
 
-    async function deleteItem(id) {
+    async function deleteProject(id) {
         let { error } = await client.from("projects").delete().eq("id", id);
         if(error) alert("删除失败: " + error.message);
-        else { load(); closeDetail(); }
+        else { loadProjects(); closeDetail(); }
+    }
+
+    // ========== 影人相关函数 ==========
+    async function loadPeopleData() {
+        // 获取所有影人
+        const { data: people, error: peopleError } = await client.from("people").select("*");
+        if (peopleError) { console.error("加载影人失败", peopleError); return; }
+        
+        // 获取所有关联数据（包含项目信息）
+        const { data: relations, error: relError } = await client.from("person_projects").select("*, projects(*)");
+        if (relError) { console.error("加载关联失败", relError); return; }
+        
+        peopleData = people || [];
+        
+        // 计算每个影人的得分和代表作
+        peopleScores = peopleData.map(person => {
+            const personProjects = relations.filter(r => r.person_id === person.id);
+            let totalScore = 0;
+            let works = [];
+            let pendingWorks = [];
+            
+            for (let r of personProjects) {
+                const proj = r.projects;
+                if (!proj) continue;
+                
+                const baseScore = getProjectBaseScore(proj);
+                const roleWeight = getRoleWeight(r.role_in_project, person.name, proj);
+                const contribution = baseScore * roleWeight;
+                totalScore += contribution;
+                
+                const workInfo = {
+                    name: proj.name,
+                    role: r.role_in_project,
+                    contribution: contribution,
+                    status: getStatus(proj),
+                    rating: proj.rating,
+                    year: proj.air_date ? proj.air_date.substring(0,4) : (proj.end_date ? proj.end_date.substring(0,4) : (proj.start_date ? proj.start_date.substring(0,4) : ''))
+                };
+                
+                if (proj.air_date && proj.rating) {
+                    works.push(workInfo);
+                } else {
+                    pendingWorks.push(workInfo);
+                }
+            }
+            
+            // 按贡献分降序排列
+            works.sort((a,b) => b.contribution - a.contribution);
+            pendingWorks.sort((a,b) => b.contribution - a.contribution);
+            
+            // 推断主要职业
+            let mainRole = person.role;
+            if (!mainRole && works.length > 0) {
+                const roleCount = {};
+                works.forEach(w => { roleCount[w.role] = (roleCount[w.role] || 0) + 1; });
+                const topRole = Object.keys(roleCount).reduce((a,b) => roleCount[a] > roleCount[b] ? a : b, '');
+                if (topRole === '导演') mainRole = '导演';
+                else if (topRole === '编剧') mainRole = '编剧';
+                else if (['男主','女主','男二','女二'].includes(topRole)) mainRole = '演员';
+                else mainRole = '-';
+            } else if (!mainRole && pendingWorks.length > 0) {
+                mainRole = pendingWorks[0].role;
+                if (mainRole === '导演') mainRole = '导演';
+                else if (mainRole === '编剧') mainRole = '编剧';
+                else mainRole = '演员';
+            }
+            
+            return {
+                ...person,
+                totalScore: totalScore,
+                worksCount: works.length + pendingWorks.length,
+                works: works.slice(0, 5),
+                pendingWorks: pendingWorks.slice(0, 3),
+                mainRole: mainRole
+            };
+        });
+        
+        // 按总分降序排序
+        peopleScores.sort((a,b) => b.totalScore - a.totalScore);
+        renderPeopleTable();
+    }
+
+    function renderPeopleTable() {
+        const roleFilter = document.getElementById("peopleRoleFilter").value;
+        let filtered = [...peopleScores];
+        
+        if (roleFilter === "导演") {
+            filtered = filtered.filter(p => p.mainRole === "导演");
+        } else if (roleFilter === "编剧") {
+            filtered = filtered.filter(p => p.mainRole === "编剧");
+        } else if (roleFilter === "演员") {
+            filtered = filtered.filter(p => p.mainRole === "演员");
+        }
+        
+        const tbody = document.getElementById("peopleTableBody");
+        if (filtered.length === 0) {
+            tbody.innerHTML = '发展<td colspan="5" class="loading">暂无影人数据发展发展';
+            return;
+        }
+        
+        let html = "";
+        for (let p of filtered) {
+            html += `<tr data-person-id="${p.id}">
+                <td style="font-weight:500;">${h(p.name)}</td>
+                <td>${h(p.mainRole)}</td>
+                <td><span class="score-badge">${p.totalScore.toFixed(2)}</span></td>
+                <td>${p.worksCount}</td>
+                <td><button class="view-person-btn" data-id="${p.id}">详情</button></td>
+            发展`;
+        }
+        tbody.innerHTML = html;
+        
+        document.querySelectorAll('.view-person-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const id = parseInt(btn.dataset.id);
+                showPersonDetail(id);
+            };
+        });
+        
+        document.querySelectorAll("#peopleTableBody tr").forEach(row => {
+            row.onclick = () => {
+                const id = parseInt(row.dataset.personId);
+                if (id) showPersonDetail(id);
+            };
+        });
+    }
+
+    function showPersonDetail(personId) {
+        const person = peopleScores.find(p => p.id === personId);
+        if (!person) return;
+        
+        let worksHtml = '';
+        if (person.works.length > 0) {
+            worksHtml += '<div class="detail-block"><strong>🎬 已播出代表作</strong><ul style="margin-left:20px; margin-top:8px;">';
+            for (let w of person.works) {
+                worksHtml += `<li><strong>${h(w.name)}</strong>（${w.role}，豆瓣 ${w.rating}，贡献 ${w.contribution.toFixed(2)}分）${w.year ? ` · ${w.year}` : ''}</li>`;
+            }
+            worksHtml += '</ul></div>';
+        }
+        
+        if (person.pendingWorks.length > 0) {
+            worksHtml += '<div class="detail-block"><strong>📌 未播出项目</strong><ul style="margin-left:20px; margin-top:8px;">';
+            for (let w of person.pendingWorks) {
+                let statusText = w.status === '已杀青' ? '🔥 已杀青' : (w.status === '已开机' ? '🎬 拍摄中' : '📝 筹备中');
+                worksHtml += `<li><strong>${h(w.name)}</strong>（${w.role}，${statusText}，贡献 ${w.contribution.toFixed(2)}分）</li>`;
+            }
+            worksHtml += '</ul></div>';
+        }
+        
+        let photoHtml = person.photo ? `<img src="${h(person.photo)}" style="width:100px; height:100px; object-fit:cover; border-radius:50%; margin-bottom:12px;">` : '';
+        
+        let detailHtml = `
+            <div style="text-align:center;">${photoHtml}</div>
+            <div class="detail-block"><strong>姓名</strong> ${h(person.name)}</div>
+            <div class="detail-block"><strong>职业</strong> ${h(person.mainRole)}</div>
+            <div class="detail-block"><strong>综合得分</strong> <span class="score-badge">${person.totalScore.toFixed(2)}</span></div>
+            <div class="detail-block"><strong>参与作品数</strong> ${person.worksCount}</div>
+            ${worksHtml}
+            <div class="detail-block"><strong>简介</strong> ${h(person.bio || '暂无简介')}</div>
+        `;
+        document.getElementById("personDetailContent").innerHTML = detailHtml;
+        document.getElementById("personDetailModal").classList.add("active");
+    }
+
+    function closePersonDetail() {
+        document.getElementById("personDetailModal").classList.remove("active");
+    }
+
+    // ========== Tab 切换和事件绑定 ==========
+    function switchTab(tab) {
+        currentTab = tab;
+        if (tab === "projects") {
+            document.getElementById("projectsView").style.display = "block";
+            document.getElementById("peopleView").style.display = "none";
+            document.querySelectorAll(".tab-btn").forEach(btn => {
+                if (btn.dataset.tab === "projects") btn.classList.add("active");
+                else btn.classList.remove("active");
+            });
+        } else {
+            document.getElementById("projectsView").style.display = "none";
+            document.getElementById("peopleView").style.display = "block";
+            document.querySelectorAll(".tab-btn").forEach(btn => {
+                if (btn.dataset.tab === "people") btn.classList.add("active");
+                else btn.classList.remove("active");
+            });
+            if (peopleScores.length === 0) loadPeopleData();
+        }
+    }
+
+    function initFilters() {
+        document.getElementById("levelFilter").onchange = () => { filters.level = document.getElementById("levelFilter").value; renderProjectsTable(); };
+        document.getElementById("typeFilter").onchange = () => { filters.type = document.getElementById("typeFilter").value; renderProjectsTable(); };
+        document.getElementById("platformFilter").onchange = () => { filters.platform = document.getElementById("platformFilter").value; renderProjectsTable(); };
+        document.getElementById("statusFilter").onchange = () => { filters.status = document.getElementById("statusFilter").value; renderProjectsTable(); };
+        document.getElementById("resetFilters").onclick = () => {
+            document.getElementById("levelFilter").value = "all";
+            document.getElementById("typeFilter").value = "all";
+            document.getElementById("platformFilter").value = "all";
+            document.getElementById("statusFilter").value = "all";
+            filters = { level: "all", type: "all", platform: "all", status: "all" };
+            renderProjectsTable();
+        };
+        document.getElementById("peopleRoleFilter").onchange = () => { renderPeopleTable(); };
     }
 
     function initPlatformEvents() {
@@ -453,31 +739,26 @@
         updateSelectedDisplay();
     }
 
-    function initFilters() {
-        document.getElementById("levelFilter").onchange = () => { filters.level = document.getElementById("levelFilter").value; load(); };
-        document.getElementById("typeFilter").onchange = () => { filters.type = document.getElementById("typeFilter").value; load(); };
-        document.getElementById("platformFilter").onchange = () => { filters.platform = document.getElementById("platformFilter").value; load(); };
-        document.getElementById("statusFilter").onchange = () => { filters.status = document.getElementById("statusFilter").value; load(); };
-        document.getElementById("resetFilters").onclick = () => {
-            document.getElementById("levelFilter").value = "all";
-            document.getElementById("typeFilter").value = "all";
-            document.getElementById("platformFilter").value = "all";
-            document.getElementById("statusFilter").value = "all";
-            filters = { level: "all", type: "all", platform: "all", status: "all" };
-            load();
-        };
+    function bindEvents() {
+        document.getElementById("addBtn").onclick = () => openEdit(null);
+        document.getElementById("closeEditModalBtn").onclick = closeEdit;
+        document.getElementById("saveBtn").onclick = saveProject;
+        document.getElementById("closeDetailBtn").onclick = closeDetail;
+        document.getElementById("closePersonDetailBtn").onclick = closePersonDetail;
+        document.getElementById("editModal").onclick = e => { if(e.target === document.getElementById("editModal")) closeEdit(); };
+        document.getElementById("detailModal").onclick = e => { if(e.target === document.getElementById("detailModal")) closeDetail(); };
+        document.getElementById("personDetailModal").onclick = e => { if(e.target === document.getElementById("personDetailModal")) closePersonDetail(); };
+        
+        document.querySelectorAll(".tab-btn").forEach(btn => {
+            btn.onclick = () => switchTab(btn.dataset.tab);
+        });
     }
 
-    document.getElementById("addBtn").onclick = () => openEdit(null);
-    document.getElementById("closeEditModalBtn").onclick = closeEdit;
-    document.getElementById("saveBtn").onclick = save;
-    document.getElementById("closeDetailBtn").onclick = closeDetail;
-    document.getElementById("editModal").onclick = e => { if(e.target === document.getElementById("editModal")) closeEdit(); };
-    document.getElementById("detailModal").onclick = e => { if(e.target === document.getElementById("detailModal")) closeDetail(); };
-
+    // ========== 初始化 ==========
+    loadProjects();
     initFilters();
+    bindEvents();
     initPlatformEvents();
-    load();
 </script>
 </body>
 </html>
