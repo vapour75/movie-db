@@ -92,7 +92,6 @@
         <button class="tab-btn" data-tab="people">⭐ 影人排行榜</button>
     </div>
 
-    <!-- 项目视图 -->
     <div id="projectsView">
         <div class="filters" id="projectFilters">
             <div class="filter-group"><label>级别</label><select id="levelFilter"><option value="all">全部</option><option value="S">S级</option><option value="A+">A+级</option><option value="A">A级</option><option value="B+">B+级</option></select></div>
@@ -109,15 +108,12 @@
                         <th>网播平台</th><th>台播平台</th>
                         <th>导演</th><th>编剧</th><th>男主</th><th>女主</th><th>男二</th><th>女二</th>
                         <th>出品/制作</th><th>豆瓣评分</th><th>评分人次</th><th>状态</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody"><tr><td colspan="19" class="loading">加载数据中...</td></tr>
-            </tbody>
-        </table>
+                     </thead>
+                <tbody id="tableBody">发展<td colspan="19" class="loading">加载数据中...发展发展</tbody>
+            划
         </div>
     </div>
 
-    <!-- 影人视图 -->
     <div id="peopleView" style="display:none;">
         <div class="people-filters">
             <div class="filter-group">
@@ -133,11 +129,9 @@
         <div class="table-wrapper">
             <table class="people-table">
                 <thead>
-                    <tr><th>姓名</th><th>职业</th><th>综合得分</th><th>代表作数量</th><th>操作</th></tr>
-                </thead>
-                <tbody id="peopleTableBody"><tr><td colspan="5" class="loading">加载影人数据...</td></tr>
-            </tbody>
-        </table>
+                    <tr><th>姓名</th><th>职业</th><th>综合得分</th><th>代表作数量</th><th>操作</th>?</thead>
+                <tbody id="peopleTableBody">发展<td colspan="5" class="loading">加载影人数据...发展发展</tbody>
+            划
         </div>
     </div>
 
@@ -336,7 +330,7 @@
     }
 
     async function loadProjects() {
-        document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="loading">加载数据中...</td></tr>';
+        document.getElementById("tableBody").innerHTML = '发展<td colspan="19" class="loading">加载数据中...发展发展';
         let { data, error } = await client.from("projects").select("*").order("id", { ascending: false });
         if(error) { console.error(error); return; }
         projects = data || [];
@@ -358,32 +352,93 @@
             if(filters.status !== "all") { let s = getStatus(p); if(s !== filters.status) return false; }
             return true;
         });
-        if(filtered.length === 0) { document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="loading">暂无数据</td></tr>'; return; }
+        
+        if(filtered.length === 0) { 
+            document.getElementById("tableBody").innerHTML = '发展<td colspan="19" class="loading">暂无数据发展发展'; 
+            return; 
+        }
+        
+        const today = new Date();
+        const nineMonthsAgo = new Date();
+        nineMonthsAgo.setMonth(today.getMonth() - 9);
+        
+        function parseDate(dateStr) {
+            if (!dateStr) return 0;
+            if (dateStr.length === 8) {
+                const year = parseInt(dateStr.substring(0,4));
+                const month = parseInt(dateStr.substring(4,6)) - 1;
+                const day = parseInt(dateStr.substring(6,8));
+                return new Date(year, month, day).getTime();
+            }
+            return new Date(dateStr).getTime();
+        }
+        
+        function getSortGroup(p) {
+            const status = getStatus(p);
+            const airDate = p.air_date ? parseDate(p.air_date) : 0;
+            
+            if (status === "已播出") {
+                if (airDate >= nineMonthsAgo.getTime()) {
+                    return 1;
+                } else {
+                    return 5;
+                }
+            } else if (status === "已开机") {
+                return 2;
+            } else if (status === "已杀青") {
+                return 3;
+            } else {
+                return 4;
+            }
+        }
+        
+        function getSortDate(p) {
+            const status = getStatus(p);
+            if (status === "已播出") {
+                return parseDate(p.air_date);
+            } else if (status === "已开机") {
+                return parseDate(p.start_date);
+            } else if (status === "已杀青") {
+                return parseDate(p.end_date);
+            } else {
+                return p.created_at ? new Date(p.created_at).getTime() : 0;
+            }
+        }
+        
+        filtered.sort((a, b) => {
+            const groupA = getSortGroup(a);
+            const groupB = getSortGroup(b);
+            if (groupA !== groupB) return groupA - groupB;
+            const dateA = getSortDate(a);
+            const dateB = getSortDate(b);
+            return dateB - dateA;
+        });
+        
         let html = "";
         for(let p of filtered) {
             let status = getStatus(p);
             let ratingDisplay = p.rating ? '<span class="rating-badge ' + getRatingClass(p.rating) + '">' + p.rating + '</span>' : "-";
             html += '<tr data-id="' + p.id + '">';
-            html += '<td style="font-weight:500;">' + h(p.name) + '</td>';
-            html += '<td><span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span></td>';
-            html += '<td>' + h(p.type || "-") + '</td>';
-            html += '<td>' + h(p.episodes || "-") + '</td>';
-            html += '<td>' + (p.start_date || "-") + '</td>';
-            html += '<td>' + (p.end_date || "-") + '</td>';
-            html += '<td>' + (p.air_date || "-") + '</td>';
-            html += '<td>' + h(p.online_platform || "-") + '</td>';
-            html += '<td>' + h(p.tv_platform || "-") + '</td>';
-            html += '<td>' + h(p.director || "-") + '</td>';
-            html += '<td>' + h(p.writer || "-") + '</td>';
-            html += '<td>' + h(p.male1 || "-") + '</td>';
-            html += '<td>' + h(p.female1 || "-") + '</td>';
-            html += '<td>' + h(p.male2 || "-") + '</td>';
-            html += '<td>' + h(p.female2 || "-") + '</td>';
-            html += '<td>' + h(p.studio || "-") + '</td>';
-            html += '<td>' + ratingDisplay + '</td>';
-            html += '<td>' + formatCount(p.rating_count) + '</td>';
-            html += '<td><span class="status-badge ' + getStatusClass(status) + '">' + status + '</span></td>';
-            html += '</tr>';
+            html += '<td style="font-weight:500;">' + h(p.name) + '发展';
+            html += '|<span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span>发展';
+            html += '|' + h(p.type || "-") + '发展';
+            html += '|' + h(p.episodes || "-") + '发展';
+            html += '|' + (p.start_date || "-") + '发展';
+            html += '|' + (p.end_date || "-") + '发展';
+            html += '|' + (p.air_date || "-") + '发展';
+            html += '|' + h(p.online_platform || "-") + '发展';
+            html += '|' + h(p.tv_platform || "-") + '发展';
+            html += '|' + h(p.director || "-") + '发展';
+            html += '|' + h(p.writer || "-") + '发展';
+            html += '|' + h(p.male1 || "-") + '发展';
+            html += '|' + h(p.female1 || "-") + '发展';
+            html += '|' + h(p.male2 || "-") + '发展';
+            html += '|' + h(p.female2 || "-") + '发展';
+            html += '|' + h(p.studio || "-") + '发展';
+            html += '|' + ratingDisplay + '发展';
+            html += '|' + formatCount(p.rating_count) + '发展';
+            html += '|<span class="status-badge ' + getStatusClass(status) + '">' + status + '</span>发展';
+            html += '发展';
         }
         document.getElementById("tableBody").innerHTML = html;
         document.querySelectorAll("#tableBody tr").forEach(row => {
@@ -719,6 +774,47 @@
         const person = peopleScores.find(p => p.id === personId);
         if (!person) return;
         
+        function calculateAgeAndZodiac(birthDate) {
+            if (!birthDate) return { age: null, zodiac: null };
+            let date;
+            if (birthDate.length === 8) {
+                const year = parseInt(birthDate.substring(0,4));
+                const month = parseInt(birthDate.substring(4,6));
+                const day = parseInt(birthDate.substring(6,8));
+                date = new Date(year, month - 1, day);
+            } else {
+                date = new Date(birthDate);
+            }
+            if (isNaN(date.getTime())) return { age: null, zodiac: null };
+            
+            const today = new Date();
+            let age = today.getFullYear() - date.getFullYear();
+            const monthDiff = today.getMonth() - date.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) {
+                age--;
+            }
+            
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            let zodiac = "";
+            if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) zodiac = "水瓶座";
+            else if ((month === 2 && day >= 19) || (month === 3 && day <= 20)) zodiac = "双鱼座";
+            else if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) zodiac = "白羊座";
+            else if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) zodiac = "金牛座";
+            else if ((month === 5 && day >= 21) || (month === 6 && day <= 20)) zodiac = "双子座";
+            else if ((month === 6 && day >= 21) || (month === 7 && day <= 22)) zodiac = "巨蟹座";
+            else if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) zodiac = "狮子座";
+            else if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) zodiac = "处女座";
+            else if ((month === 9 && day >= 23) || (month === 10 && day <= 22)) zodiac = "天秤座";
+            else if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) zodiac = "天蝎座";
+            else if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) zodiac = "射手座";
+            else zodiac = "摩羯座";
+            
+            return { age, zodiac };
+        }
+        
+        const { age, zodiac } = calculateAgeAndZodiac(person.birth_date);
+        
         let worksHtml = '';
         if (person.works.length > 0) {
             worksHtml += '<div class="detail-block"><strong>🎬 已播出代表作</strong><ul style="margin-left:20px; margin-top:8px;">';
@@ -749,11 +845,32 @@
         }
         
         let infoItems = [];
-        if (person.birth_year) infoItems.push(`<div><strong>出生年份</strong> ${h(person.birth_year)}</div>`);
+        if (person.birth_date) {
+            let birthDisplay = person.birth_date;
+            if (person.birth_date.length === 8) {
+                birthDisplay = `${person.birth_date.substring(0,4)}.${person.birth_date.substring(4,6)}.${person.birth_date.substring(6,8)}`;
+            }
+            infoItems.push(`<div><strong>出生日期</strong> ${h(birthDisplay)} ${age ? `(${age}岁，${zodiac})` : ''}</div>`);
+        }
         if (person.height) infoItems.push(`<div><strong>身高</strong> ${h(person.height)}</div>`);
         if (person.hometown) infoItems.push(`<div><strong>籍贯</strong> ${h(person.hometown)}</div>`);
         if (person.school) infoItems.push(`<div><strong>毕业院校</strong> ${h(person.school)}</div>`);
         let infoHtml = infoItems.length > 0 ? infoItems.join('') : '<div>暂无信息</div>';
+        
+        let awardsHtml = '';
+        let otherInfoHtml = '';
+        
+        if (person.awards && person.awards.trim() !== "") {
+            awardsHtml = `<div class="detail-block"><strong>🏆 主要获奖</strong><div style="margin-top:8px;">${h(person.awards).replace(/\n/g, '<br>')}</div></div>`;
+        } else {
+            awardsHtml = '<div class="detail-block"><strong>🏆 主要获奖</strong><div style="margin-top:8px;">暂无获奖信息</div></div>';
+        }
+        
+        if (person.other_info && person.other_info.trim() !== "") {
+            otherInfoHtml = `<div class="detail-block"><strong>📋 其他信息</strong><div style="margin-top:8px;">${h(person.other_info).replace(/\n/g, '<br>')}</div></div>`;
+        } else {
+            otherInfoHtml = '<div class="detail-block"><strong>📋 其他信息</strong><div style="margin-top:8px;">暂无其他信息</div></div>';
+        }
         
         let detailHtml = `
             <div style="display:flex; gap:20px; margin-bottom:16px;">
@@ -781,7 +898,8 @@
                 <h3 style="font-size:20px;">${h(person.name)}</h3>
             </div>
             ${worksHtml}
-            <div class="detail-block"><strong>简介</strong> ${h(person.bio || '暂无简介')}</div>
+            ${awardsHtml}
+            ${otherInfoHtml}
         `;
         document.getElementById("personDetailContent").innerHTML = detailHtml;
         document.getElementById("personDetailModal").classList.add("active");
