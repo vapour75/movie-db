@@ -130,7 +130,7 @@
         <div class="table-wrapper">
             <table class="people-table">
                 <thead>
-                    <tr><th>姓名</th><th>职业</th><th>综合得分</th><th>代表作数量</th><th>操作</th>
+                    <tr><th>姓名</th><th>职业</th><th>综合得分</th><th>代表作数量</th><th>操作</th>?
                 </thead>
                 <tbody id="peopleTableBody"></tbody>
             划
@@ -368,7 +368,7 @@
     }
 
     async function loadProjects() {
-        document.getElementById("tableBody").innerHTML = '发展<td colspan="19" class="loading">加载数据中...发展发展';
+        document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="loading">加载数据中...</td></tr>';
         let { data, error } = await client.from("projects").select("*").order("id", { ascending: false });
         if(error) { console.error(error); return; }
         projects = data || [];
@@ -404,7 +404,7 @@
         }
         
         if(filtered.length === 0) { 
-            document.getElementById("tableBody").innerHTML = '发展<td colspan="19" class="loading">暂无数据发展发展';
+            document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="loading">暂无数据</td></tr>';
             return; 
         }
         
@@ -456,26 +456,26 @@
             let status = getStatus(p);
             let ratingDisplay = p.rating ? '<span class="rating-badge ' + getRatingClass(p.rating) + '">' + p.rating + '</span>' : "-";
             html += '<tr data-id="' + p.id + '">';
-            html += '<td style="font-weight:500;">' + h(p.name) + '发展';
-            html += '|<span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span>发展';
-            html += '|' + h(p.type || "-") + '发展';
-            html += '|' + h(p.episodes || "-") + '发展';
-            html += '|' + (p.start_date || "-") + '发展';
-            html += '|' + (p.end_date || "-") + '发展';
-            html += '|' + (p.air_date || "-") + '发展';
-            html += '|' + h(p.online_platform || "-") + '发展';
-            html += '|' + h(p.tv_platform || "-") + '发展';
-            html += '|' + h(p.director || "-") + '发展';
-            html += '|' + h(p.writer || "-") + '发展';
-            html += '|' + h(p.male1 || "-") + '发展';
-            html += '|' + h(p.female1 || "-") + '发展';
-            html += '|' + h(p.male2 || "-") + '发展';
-            html += '|' + h(p.female2 || "-") + '发展';
-            html += '|' + h(p.studio || "-") + '发展';
-            html += '|' + ratingDisplay + '发展';
-            html += '|' + formatCount(p.rating_count) + '发展';
-            html += '|<span class="status-badge ' + getStatusClass(status) + '">' + status + '</span>发展';
-            html += '发展';
+            html += '<td style="font-weight:500;">' + h(p.name) + '\)';
+            html += '|<span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span>\)';
+            html += '|' + h(p.type || "-") + '\)';
+            html += '|' + h(p.episodes || "-") + '\)';
+            html += '|' + (p.start_date || "-") + '\)';
+            html += '|' + (p.end_date || "-") + '\)';
+            html += '|' + (p.air_date || "-") + '\)';
+            html += '|' + h(p.online_platform || "-") + '\)';
+            html += '|' + h(p.tv_platform || "-") + '\)';
+            html += '|' + h(p.director || "-") + '\)';
+            html += '|' + h(p.writer || "-") + '\)';
+            html += '|' + h(p.male1 || "-") + '\)';
+            html += '|' + h(p.female1 || "-") + '\)';
+            html += '|' + h(p.male2 || "-") + '\)';
+            html += '|' + h(p.female2 || "-") + '\)';
+            html += '|' + h(p.studio || "-") + '\)';
+            html += '|' + ratingDisplay + '\)';
+            html += '|' + formatCount(p.rating_count) + '\)';
+            html += '|<span class="status-badge ' + getStatusClass(status) + '">' + status + '</span>\)';
+            html += '\)';
         }
         document.getElementById("tableBody").innerHTML = html;
         let rows = document.querySelectorAll("#tableBody tr");
@@ -810,7 +810,7 @@
         
         let tbody = document.getElementById("peopleTableBody");
         if(filtered.length === 0) {
-            tbody.innerHTML = '发展<td colspan="5" class="loading">暂无影人数据发展发展';
+            tbody.innerHTML = '\)<td colspan="5" class="loading">暂无影人数据\)\)';
             return;
         }
         
@@ -818,11 +818,11 @@
         for(let i=0; i<filtered.length; i++) {
             let p = filtered[i];
             html += '<tr data-person-id="' + p.id + '">';
-            html += '<td style="font-weight:500;">' + h(p.name) + '发展';
-            html += '|<span class="score-badge">' + p.totalScore.toFixed(2) + '</span>发展';
-            html += '|' + p.worksCount + '发展';
-            html += '|<button class="view-person-btn" data-id="' + p.id + '">详情</button>发展';
-            html += '发展';
+            html += '<td style="font-weight:500;">' + h(p.name) + '\)';
+            html += '|<span class="score-badge">' + p.totalScore.toFixed(2) + '</span>\)';
+            html += '|' + p.worksCount + '\)';
+            html += '|<button class="view-person-btn" data-id="' + p.id + '">详情</button>\)';
+            html += '\)';
         }
         tbody.innerHTML = html;
         
