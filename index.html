@@ -214,7 +214,7 @@
     const client = supabase.createClient(MY_URL, MY_KEY);
 
     const CLOUDINARY_CLOUD_NAME = "dzklapat6";
-    const CLOUDINARY_BASE_URL = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/`;
+    const CLOUDINARY_BASE_URL = "https://res.cloudinary.com/" + CLOUDINARY_CLOUD_NAME + "/image/upload/";
 
     function getPosterUrl(poster) {
         if (!poster) return null;
@@ -304,38 +304,57 @@
 
     function getSelectedPlatforms() {
         let selected = [];
-        document.querySelectorAll('#platformCheckGroup input[type="checkbox"]').forEach(cb => {
-            if(cb.checked) {
-                if(cb.value === "其他") { let other = document.getElementById("otherPlatformInput").value.trim(); if(other) selected.push(other); }
-                else selected.push(cb.value);
+        let checkboxes = document.querySelectorAll('#platformCheckGroup input[type="checkbox"]');
+        for(let i=0; i<checkboxes.length; i++) {
+            if(checkboxes[i].checked) {
+                if(checkboxes[i].value === "其他") {
+                    let other = document.getElementById("otherPlatformInput").value.trim();
+                    if(other) selected.push(other);
+                } else {
+                    selected.push(checkboxes[i].value);
+                }
             }
-        });
+        }
         return selected;
     }
     function updateSelectedDisplay() {
         let selected = [];
-        document.querySelectorAll('#platformCheckGroup input[type="checkbox"]').forEach(cb => {
-            if(cb.checked) {
-                if(cb.value === "其他") { let other = document.getElementById("otherPlatformInput").value.trim(); selected.push(other || "待填写"); }
-                else selected.push(cb.value);
+        let checkboxes = document.querySelectorAll('#platformCheckGroup input[type="checkbox"]');
+        for(let i=0; i<checkboxes.length; i++) {
+            if(checkboxes[i].checked) {
+                if(checkboxes[i].value === "其他") {
+                    let other = document.getElementById("otherPlatformInput").value.trim();
+                    selected.push(other || "待填写");
+                } else {
+                    selected.push(checkboxes[i].value);
+                }
             }
-        });
+        }
         let div = document.getElementById("selectedPlatformsDisplay");
         if(selected.length === 0) div.innerHTML = '<span>已选：无</span>';
-        else div.innerHTML = selected.map(s => '<span>' + h(s) + '</span>').join("");
+        else {
+            let html = '';
+            for(let j=0; j<selected.length; j++) html += '<span>' + h(selected[j]) + '</span>';
+            div.innerHTML = html;
+        }
     }
     function setPlatformCheckboxes(val) {
         let checkboxes = document.querySelectorAll('#platformCheckGroup input[type="checkbox"]');
-        checkboxes.forEach(c => c.checked = false);
+        for(let i=0; i<checkboxes.length; i++) checkboxes[i].checked = false;
         document.getElementById("otherPlatformInput").value = "";
         document.getElementById("otherInputGroup").style.display = "none";
         if(!val || val === "") { updateSelectedDisplay(); return; }
         let platforms = val.split(/[、,，]/);
         let others = [];
-        for(let p of platforms) {
+        for(let j=0; j<platforms.length; j++) {
+            let p = platforms[j].trim();
             let found = false;
-            for(let cb of checkboxes) {
-                if(cb.value === p && cb.value !== "其他") { cb.checked = true; found = true; break; }
+            for(let k=0; k<checkboxes.length; k++) {
+                if(checkboxes[k].value === p && checkboxes[k].value !== "其他") {
+                    checkboxes[k].checked = true;
+                    found = true;
+                    break;
+                }
             }
             if(!found && p) others.push(p);
         }
@@ -359,18 +378,30 @@
 
     function updateStats() {
         let total = projects.length, kaiji=0, shaqing=0, yibochu=0;
-        for(let p of projects) { let s = getStatus(p); if(s==="已播出") yibochu++; else if(s==="已杀青") shaqing++; else if(s==="已开机") kaiji++; }
-        document.getElementById("statsContainer").innerHTML = '<div class="stat-card"><div class="stat-number">'+total+'</div><div>总项目</div></div><div class="stat-card"><div class="stat-number">'+kaiji+'</div><div>已开机</div></div><div class="stat-card"><div class="stat-number">'+shaqing+'</div><div>已杀青</div></div><div class="stat-card"><div class="stat-number">'+yibochu+'</div><div>已播出</div></div>';
+        for(let i=0; i<projects.length; i++) {
+            let s = getStatus(projects[i]);
+            if(s==="已播出") yibochu++;
+            else if(s==="已杀青") shaqing++;
+            else if(s==="已开机") kaiji++;
+        }
+        let statsHtml = '<div class="stat-card"><div class="stat-number">'+total+'</div><div>总项目</div></div>';
+        statsHtml += '<div class="stat-card"><div class="stat-number">'+kaiji+'</div><div>已开机</div></div>';
+        statsHtml += '<div class="stat-card"><div class="stat-number">'+shaqing+'</div><div>已杀青</div></div>';
+        statsHtml += '<div class="stat-card"><div class="stat-number">'+yibochu+'</div><div>已播出</div></div>';
+        document.getElementById("statsContainer").innerHTML = statsHtml;
     }
 
     function renderProjectsTable() {
-        let filtered = projects.filter(p => {
-            if(filters.level !== "all" && p.level !== filters.level) return false;
-            if(filters.type !== "all" && p.type && p.type.indexOf(filters.type) === -1) return false;
-            if(filters.platform !== "all" && !hasPlatform(p.online_platform, filters.platform)) return false;
-            if(filters.status !== "all") { let s = getStatus(p); if(s !== filters.status) return false; }
-            return true;
-        });
+        let filtered = [];
+        for(let i=0; i<projects.length; i++) {
+            let p = projects[i];
+            let pass = true;
+            if(filters.level !== "all" && p.level !== filters.level) pass = false;
+            if(filters.type !== "all" && p.type && p.type.indexOf(filters.type) === -1) pass = false;
+            if(filters.platform !== "all" && !hasPlatform(p.online_platform, filters.platform)) pass = false;
+            if(filters.status !== "all") { let s = getStatus(p); if(s !== filters.status) pass = false; }
+            if(pass) filtered.push(p);
+        }
         
         if(filtered.length === 0) { 
             document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="loading">暂无数据</td></tr>';
@@ -412,7 +443,7 @@
             else return p.created_at ? new Date(p.created_at).getTime() : 0;
         }
         
-        filtered.sort((a, b) => {
+        filtered.sort(function(a, b) {
             const groupA = getSortGroup(a);
             const groupB = getSortGroup(b);
             if (groupA !== groupB) return groupA - groupB;
@@ -420,39 +451,50 @@
         });
         
         let html = "";
-        for(let p of filtered) {
+        for(let i=0; i<filtered.length; i++) {
+            let p = filtered[i];
             let status = getStatus(p);
             let ratingDisplay = p.rating ? '<span class="rating-badge ' + getRatingClass(p.rating) + '">' + p.rating + '</span>' : "-";
             html += '<tr data-id="' + p.id + '">';
-            html += '<td style="font-weight:500;">' + h(p.name) + '</td>';
-            html += '<td><span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span></td>';
-            html += '<td>' + h(p.type || "-") + '</td>';
-            html += '<td>' + h(p.episodes || "-") + '</td>';
-            html += '<td>' + (p.start_date || "-") + '</td>';
-            html += '<td>' + (p.end_date || "-") + '</td>';
-            html += '<td>' + (p.air_date || "-") + '</td>';
-            html += '<td>' + h(p.online_platform || "-") + '</td>';
-            html += '<td>' + h(p.tv_platform || "-") + '</td>';
-            html += '<td>' + h(p.director || "-") + '</td>';
-            html += '<td>' + h(p.writer || "-") + '</td>';
-            html += '<td>' + h(p.male1 || "-") + '</td>';
-            html += '<td>' + h(p.female1 || "-") + '</td>';
-            html += '<td>' + h(p.male2 || "-") + '</td>';
-            html += '<td>' + h(p.female2 || "-") + '</td>';
-            html += '<td>' + h(p.studio || "-") + '</td>';
-            html += '<td>' + ratingDisplay + '</td>';
-            html += '<td>' + formatCount(p.rating_count) + '</td>';
-            html += '<td><span class="status-badge ' + getStatusClass(status) + '">' + status + '</span></td>';
-            html += '</tr>';
+            html += '<td style="font-weight:500;">' + h(p.name) + '\)';
+            html += '|<span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span>\)';
+            html += '|' + h(p.type || "-") + '\)';
+            html += '|' + h(p.episodes || "-") + '\)';
+            html += '|' + (p.start_date || "-") + '\)';
+            html += '|' + (p.end_date || "-") + '\)';
+            html += '|' + (p.air_date || "-") + '\)';
+            html += '|' + h(p.online_platform || "-") + '\)';
+            html += '|' + h(p.tv_platform || "-") + '\)';
+            html += '|' + h(p.director || "-") + '\)';
+            html += '|' + h(p.writer || "-") + '\)';
+            html += '|' + h(p.male1 || "-") + '\)';
+            html += '|' + h(p.female1 || "-") + '\)';
+            html += '|' + h(p.male2 || "-") + '\)';
+            html += '|' + h(p.female2 || "-") + '\)';
+            html += '|' + h(p.studio || "-") + '\)';
+            html += '|' + ratingDisplay + '\)';
+            html += '|' + formatCount(p.rating_count) + '\)';
+            html += '|<span class="status-badge ' + getStatusClass(status) + '">' + status + '</span>\)';
+            html += '\)';
         }
         document.getElementById("tableBody").innerHTML = html;
-        document.querySelectorAll("#tableBody tr").forEach(row => {
-            row.onclick = () => { let id = parseInt(row.dataset.id); let p = projects.find(x => x.id === id); if(p) showProjectDetail(p); };
-        });
+        let rows = document.querySelectorAll("#tableBody tr");
+        for(let i=0; i<rows.length; i++) {
+            rows[i].onclick = (function(row) {
+                return function() {
+                    let id = parseInt(row.getAttribute("data-id"));
+                    let p = null;
+                    for(let j=0; j<projects.length; j++) {
+                        if(projects[j].id === id) { p = projects[j]; break; }
+                    }
+                    if(p) showProjectDetail(p);
+                };
+            })(rows[i]);
+        }
     }
 
     function showProjectDetail(p) {
-        let actors = [p.male1, p.female1, p.male2, p.female2].filter(x=>x && x!=="").join(" / ");
+        let actors = [p.male1, p.female1, p.male2, p.female2].filter(function(x){ return x && x!==""; }).join(" / ");
         let posterUrl = getPosterUrl(p.poster);
         let posterHtml = posterUrl ? "<img class='poster-image' src='" + h(posterUrl) + "' onerror=\"this.onerror=null; this.parentElement.innerHTML='<div class=\\'poster-placeholder\\'>图片加载失败</div>';\">" : "<div class='poster-placeholder'>暂无海报</div>";
         let detail = '<div class="poster-container">' + posterHtml + '<div class="poster-info">';
@@ -464,8 +506,8 @@
         detail += '<div class="detail-block"><strong>出品/制作</strong> ' + h(p.studio||"-") + '<br><strong>总制片人</strong> ' + (p.producer||"-") + '<br><strong>制片人</strong> ' + (p.co_producer||"-") + '</div>';
         detail += '<div class="detail-block"><strong>豆瓣评分</strong> ' + (p.rating||"-") + ' (' + formatCount(p.rating_count) + ')<br><strong>原著</strong> ' + h(p.original||"-") + '</div>';
         document.getElementById("detailContent").innerHTML = detail;
-        document.getElementById("editDetailBtn").onclick = () => { closeDetail(); openEdit(p.id); };
-        document.getElementById("deleteDetailBtn").onclick = () => { if(confirm("删除《" + p.name + "》？")) deleteProject(p.id); };
+        document.getElementById("editDetailBtn").onclick = function() { closeDetail(); openEdit(p.id); };
+        document.getElementById("deleteDetailBtn").onclick = function() { if(confirm("删除《" + p.name + "》？")) deleteProject(p.id); };
         document.getElementById("detailModal").classList.add("active");
     }
 
@@ -474,11 +516,15 @@
     function openEdit(id) {
         currentId = id;
         document.getElementById("modalTitle").innerText = id ? "编辑项目" : "添加项目";
-        document.querySelectorAll('#platformCheckGroup input[type="checkbox"]').forEach(c => c.checked = false);
+        let checkboxes = document.querySelectorAll('#platformCheckGroup input[type="checkbox"]');
+        for(let i=0; i<checkboxes.length; i++) checkboxes[i].checked = false;
         document.getElementById("otherPlatformInput").value = "";
         document.getElementById("otherInputGroup").style.display = "none";
         if(id) {
-            let p = projects.find(x => x.id === id);
+            let p = null;
+            for(let i=0; i<projects.length; i++) {
+                if(projects[i].id === id) { p = projects[i]; break; }
+            }
             if(p) {
                 document.getElementById("projName").value = p.name;
                 document.getElementById("projLevel").value = p.level;
@@ -592,39 +638,40 @@
         
         if (projectData.director && projectData.director.trim() !== "") {
             let directors = projectData.director.split(/[、,，]/).map(s => s.trim()).filter(s => s);
-            for (let d of directors) personRoles.push({ name: d, role: '导演' });
+            for(let i=0; i<directors.length; i++) personRoles.push({ name: directors[i], role: '导演' });
         }
         if (projectData.writer && projectData.writer.trim() !== "") {
             let writers = projectData.writer.split(/[、,，]/).map(s => s.trim()).filter(s => s);
-            for (let w of writers) personRoles.push({ name: w, role: '编剧' });
+            for(let i=0; i<writers.length; i++) personRoles.push({ name: writers[i], role: '编剧' });
         }
         if (projectData.male1 && projectData.male1.trim() !== "") {
             let male1s = projectData.male1.split(/[、,，]/).map(s => s.trim()).filter(s => s);
-            for (let m of male1s) personRoles.push({ name: m, role: '男主' });
+            for(let i=0; i<male1s.length; i++) personRoles.push({ name: male1s[i], role: '男主' });
         }
         if (projectData.female1 && projectData.female1.trim() !== "") {
             let female1s = projectData.female1.split(/[、,，]/).map(s => s.trim()).filter(s => s);
-            for (let f of female1s) personRoles.push({ name: f, role: '女主' });
+            for(let i=0; i<female1s.length; i++) personRoles.push({ name: female1s[i], role: '女主' });
         }
         if (projectData.male2 && projectData.male2.trim() !== "") {
             let male2s = projectData.male2.split(/[、,，]/).map(s => s.trim()).filter(s => s);
-            for (let m of male2s) personRoles.push({ name: m, role: '男二' });
+            for(let i=0; i<male2s.length; i++) personRoles.push({ name: male2s[i], role: '男二' });
         }
         if (projectData.female2 && projectData.female2.trim() !== "") {
             let female2s = projectData.female2.split(/[、,，]/).map(s => s.trim()).filter(s => s);
-            for (let f of female2s) personRoles.push({ name: f, role: '女二' });
+            for(let i=0; i<female2s.length; i++) personRoles.push({ name: female2s[i], role: '女二' });
         }
         
         let uniquePersons = [];
-        let personNames = new Set();
-        for (let pr of personRoles) {
-            if (!personNames.has(pr.name)) {
-                personNames.add(pr.name);
-                uniquePersons.push(pr);
+        let personNames = {};
+        for(let i=0; i<personRoles.length; i++) {
+            if(!personNames[personRoles[i].name]) {
+                personNames[personRoles[i].name] = true;
+                uniquePersons.push(personRoles[i]);
             }
         }
         
-        for (let pr of uniquePersons) {
+        for(let i=0; i<uniquePersons.length; i++) {
+            let pr = uniquePersons[i];
             let { data: existing } = await client.from("people").select("id").eq("name", pr.name);
             let personId;
             if (existing && existing.length > 0) {
@@ -665,22 +712,28 @@
         
         peopleData = people || [];
         
-        peopleScores = peopleData.map(person => {
-            const personProjects = relations.filter(r => r.person_id === person.id);
+        peopleScores = [];
+        for(let i=0; i<peopleData.length; i++) {
+            let person = peopleData[i];
+            let personProjects = [];
+            for(let j=0; j<relations.length; j++) {
+                if(relations[j].person_id === person.id) personProjects.push(relations[j]);
+            }
             let totalScore = 0;
             let works = [];
             let pendingWorks = [];
             
-            for (let r of personProjects) {
-                const proj = r.projects;
+            for(let j=0; j<personProjects.length; j++) {
+                let r = personProjects[j];
+                let proj = r.projects;
                 if (!proj) continue;
                 
-                const baseScore = getProjectBaseScore(proj);
-                const roleWeight = getRoleWeight(r.role_in_project, person.name, proj);
-                const contribution = baseScore * roleWeight;
+                let baseScore = getProjectBaseScore(proj);
+                let roleWeight = getRoleWeight(r.role_in_project, person.name, proj);
+                let contribution = baseScore * roleWeight;
                 totalScore += contribution;
                 
-                const workInfo = {
+                let workInfo = {
                     name: proj.name,
                     role: r.role_in_project,
                     contribution: contribution,
@@ -696,17 +749,23 @@
                 }
             }
             
-            works.sort((a,b) => b.contribution - a.contribution);
-            pendingWorks.sort((a,b) => b.contribution - a.contribution);
+            works.sort(function(a,b){ return b.contribution - a.contribution; });
+            pendingWorks.sort(function(a,b){ return b.contribution - a.contribution; });
             
             let mainRole = person.role;
             if (!mainRole && works.length > 0) {
-                const roleCount = {};
-                works.forEach(w => { roleCount[w.role] = (roleCount[w.role] || 0) + 1; });
-                const topRole = Object.keys(roleCount).reduce((a,b) => roleCount[a] > roleCount[b] ? a : b, '');
+                let roleCount = {};
+                for(let j=0; j<works.length; j++) {
+                    roleCount[works[j].role] = (roleCount[works[j].role] || 0) + 1;
+                }
+                let topRole = '';
+                let maxCount = 0;
+                for(let r in roleCount) {
+                    if(roleCount[r] > maxCount) { maxCount = roleCount[r]; topRole = r; }
+                }
                 if (topRole === '导演') mainRole = '导演';
                 else if (topRole === '编剧') mainRole = '编剧';
-                else if (['男主','女主','男二','女二'].includes(topRole)) mainRole = '演员';
+                else if (topRole === '男主' || topRole === '女主' || topRole === '男二' || topRole === '女二') mainRole = '演员';
                 else mainRole = '-';
             } else if (!mainRole && pendingWorks.length > 0) {
                 mainRole = pendingWorks[0].role;
@@ -715,68 +774,81 @@
                 else mainRole = '演员';
             }
             
-            return {
-                ...person,
+            peopleScores.push({
+                id: person.id,
+                name: person.name,
+                role: person.role,
+                bio: person.bio,
+                photo: person.photo,
+                birth_date: person.birth_date,
+                height: person.height,
+                hometown: person.hometown,
+                school: person.school,
+                awards: person.awards,
+                other_info: person.other_info,
                 totalScore: totalScore,
                 worksCount: works.length + pendingWorks.length,
                 works: works.slice(0, 5),
                 pendingWorks: pendingWorks.slice(0, 3),
                 mainRole: mainRole
-            };
-        });
+            });
+        }
         
-        peopleScores.sort((a,b) => b.totalScore - a.totalScore);
+        peopleScores.sort(function(a,b){ return b.totalScore - a.totalScore; });
         renderPeopleTable();
     }
 
     function renderPeopleTable() {
-        const roleFilter = document.getElementById("peopleRoleFilter").value;
-        let filtered = [...peopleScores];
-        
-        if (roleFilter === "导演") {
-            filtered = filtered.filter(p => p.mainRole === "导演");
-        } else if (roleFilter === "编剧") {
-            filtered = filtered.filter(p => p.mainRole === "编剧");
-        } else if (roleFilter === "演员") {
-            filtered = filtered.filter(p => p.mainRole === "演员");
+        let roleFilter = document.getElementById("peopleRoleFilter").value;
+        let filtered = [];
+        for(let i=0; i<peopleScores.length; i++) {
+            if(roleFilter === "导演" && peopleScores[i].mainRole !== "导演") continue;
+            if(roleFilter === "编剧" && peopleScores[i].mainRole !== "编剧") continue;
+            if(roleFilter === "演员" && peopleScores[i].mainRole !== "演员") continue;
+            filtered.push(peopleScores[i]);
         }
         
-        const tbody = document.getElementById("peopleTableBody");
-        if (filtered.length === 0) {
-            tbody.innerHTML = '发展<td colspan="5" class="loading">暂无影人数据发展发展';
+        let tbody = document.getElementById("peopleTableBody");
+        if(filtered.length === 0) {
+            tbody.innerHTML = '\)<td colspan="5" class="loading">暂无影人数据\)\)';
             return;
         }
         
         let html = "";
-        for (let p of filtered) {
+        for(let i=0; i<filtered.length; i++) {
+            let p = filtered[i];
             html += '<tr data-person-id="' + p.id + '">';
-            html += '<td style="font-weight:500;">' + h(p.name) + '</td>';
-            html += '<td>' + h(p.mainRole) + '</td>';
-            html += '<td><span class="score-badge">' + p.totalScore.toFixed(2) + '</span></td>';
-            html += '<td>' + p.worksCount + '</td>';
-            html += '<td><button class="view-person-btn" data-id="' + p.id + '">详情</button></td>';
-            html += '</tr>';
+            html += '<td style="font-weight:500;">' + h(p.name) + '\)';
+            html += '|<span class="score-badge">' + p.totalScore.toFixed(2) + '</span>\)';
+            html += '|' + p.worksCount + '\)';
+            html += '|<button class="view-person-btn" data-id="' + p.id + '">详情</button>\)';
+            html += '\)';
         }
         tbody.innerHTML = html;
         
-        document.querySelectorAll('.view-person-btn').forEach(btn => {
-            btn.onclick = (e) => {
+        let btns = document.querySelectorAll('.view-person-btn');
+        for(let i=0; i<btns.length; i++) {
+            btns[i].onclick = function(e) {
                 e.stopPropagation();
-                const id = parseInt(btn.dataset.id);
+                let id = parseInt(this.getAttribute("data-id"));
                 showPersonDetail(id);
             };
-        });
+        }
         
-        document.querySelectorAll("#peopleTableBody tr").forEach(row => {
-            row.onclick = () => {
-                const id = parseInt(row.dataset.personId);
+        let rows = document.querySelectorAll("#peopleTableBody tr");
+        for(let i=0; i<rows.length; i++) {
+            rows[i].onclick = function() {
+                let id = parseInt(this.getAttribute("data-person-id"));
                 if (id) showPersonDetail(id);
             };
-        });
+        }
     }
 
     function openPersonEdit(personId) {
-        const person = peopleScores.find(p => p.id === personId);
+        let person = null;
+        for(let i=0; i<peopleScores.length; i++) {
+            if(peopleScores[i].id === personId) { person = peopleScores[i]; break; }
+        }
         if (!person) return;
         currentPersonId = personId;
         document.getElementById("personName").value = person.name;
@@ -790,7 +862,7 @@
     }
 
     async function savePersonInfo() {
-        const updateData = {
+        let updateData = {
             birth_date: document.getElementById("personBirthDate").value,
             height: document.getElementById("personHeight").value,
             hometown: document.getElementById("personHometown").value,
@@ -799,7 +871,7 @@
             other_info: document.getElementById("personOtherInfo").value
         };
         
-        const { error } = await client.from("people").update(updateData).eq("id", currentPersonId);
+        let { error } = await client.from("people").update(updateData).eq("id", currentPersonId);
         if (error) {
             alert("保存失败: " + error.message);
         } else {
@@ -811,31 +883,34 @@
     }
 
     function showPersonDetail(personId) {
-        const person = peopleScores.find(p => p.id === personId);
+        let person = null;
+        for(let i=0; i<peopleScores.length; i++) {
+            if(peopleScores[i].id === personId) { person = peopleScores[i]; break; }
+        }
         if (!person) return;
         
         function calculateAgeAndZodiac(birthDate) {
             if (!birthDate) return { age: null, zodiac: null };
             let date;
             if (birthDate.length === 8) {
-                const year = parseInt(birthDate.substring(0,4));
-                const month = parseInt(birthDate.substring(4,6));
-                const day = parseInt(birthDate.substring(6,8));
+                let year = parseInt(birthDate.substring(0,4));
+                let month = parseInt(birthDate.substring(4,6));
+                let day = parseInt(birthDate.substring(6,8));
                 date = new Date(year, month - 1, day);
             } else {
                 date = new Date(birthDate);
             }
             if (isNaN(date.getTime())) return { age: null, zodiac: null };
             
-            const today = new Date();
+            let today = new Date();
             let age = today.getFullYear() - date.getFullYear();
-            const monthDiff = today.getMonth() - date.getMonth();
+            let monthDiff = today.getMonth() - date.getMonth();
             if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) {
                 age--;
             }
             
-            const month = date.getMonth() + 1;
-            const day = date.getDate();
+            let month = date.getMonth() + 1;
+            let day = date.getDate();
             let zodiac = "";
             if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) zodiac = "水瓶座";
             else if ((month === 2 && day >= 19) || (month === 3 && day <= 20)) zodiac = "双鱼座";
@@ -850,15 +925,18 @@
             else if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) zodiac = "射手座";
             else zodiac = "摩羯座";
             
-            return { age, zodiac };
+            return { age: age, zodiac: zodiac };
         }
         
-        const { age, zodiac } = calculateAgeAndZodiac(person.birth_date);
+        let ageInfo = calculateAgeAndZodiac(person.birth_date);
+        let age = ageInfo.age;
+        let zodiac = ageInfo.zodiac;
         
         let worksHtml = '';
         if (person.works.length > 0) {
             worksHtml += '<div class="detail-block"><strong>🎬 已播出代表作</strong><ul style="margin-left:20px; margin-top:8px;">';
-            for (let w of person.works) {
+            for(let i=0; i<person.works.length; i++) {
+                let w = person.works[i];
                 worksHtml += '<li><strong>' + h(w.name) + '</strong>（' + w.role + '，豆瓣 ' + w.rating + '，贡献 ' + w.contribution.toFixed(2) + '分）' + (w.year ? ' · ' + w.year : '') + '</li>';
             }
             worksHtml += '</ul></div>';
@@ -866,7 +944,8 @@
         
         if (person.pendingWorks.length > 0) {
             worksHtml += '<div class="detail-block"><strong>📌 未播出项目</strong><ul style="margin-left:20px; margin-top:8px;">';
-            for (let w of person.pendingWorks) {
+            for(let i=0; i<person.pendingWorks.length; i++) {
+                let w = person.pendingWorks[i];
                 let statusText = w.status === '已杀青' ? '✅ 已杀青' : (w.status === '已开机' ? '🎬 拍摄中' : '📝 筹备中');
                 worksHtml += '<li><strong>' + h(w.name) + '</strong>（' + w.role + '，' + statusText + '，贡献 ' + w.contribution.toFixed(2) + '分）</li>';
             }
@@ -879,7 +958,7 @@
             if (!photoUrl.startsWith('http://') && !photoUrl.startsWith('https://')) {
                 photoUrl = CLOUDINARY_BASE_URL + photoUrl;
             }
-            photoHtml = '<img class="poster-image" src="' + h(photoUrl) + '" style="width:120px; height:160px; object-fit:cover; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1);" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<div class=\'poster-placeholder\' style=\'width:120px; height:160px;\'>暂无照片</div>';" />';
+            photoHtml = '<img class="poster-image" src="' + h(photoUrl) + '" style="width:120px; height:160px; object-fit:cover; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1);" onerror="this.onerror=null; this.parentElement.innerHTML=\'<div class="poster-placeholder" style="width:120px; height:160px;">暂无照片</div>\';">';
         } else {
             photoHtml = '<div class="poster-placeholder" style="width:120px; height:160px; display:flex; align-items:center; justify-content:center;">📷 暂无照片</div>';
         }
@@ -900,43 +979,18 @@
         let awardsHtml = person.awards ? '<div class="detail-block"><strong>🏆 主要获奖</strong><div style="margin-top:8px;">' + h(person.awards).replace(/\n/g, '<br>') + '</div></div>' : '<div class="detail-block"><strong>🏆 主要获奖</strong><div style="margin-top:8px;">暂无获奖信息</div></div>';
         let otherInfoHtml = person.other_info ? '<div class="detail-block"><strong>📋 其他信息</strong><div style="margin-top:8px;">' + h(person.other_info).replace(/\n/g, '<br>') + '</div></div>' : '<div class="detail-block"><strong>📋 其他信息</strong><div style="margin-top:8px;">暂无其他信息</div></div>';
         
-        let detailHtml = `
-            <div style="display:flex; gap:20px; margin-bottom:16px;">
-                ${photoHtml}
-                <div style="flex:1; display:flex; gap:20px;">
-                    <div style="flex:1;">
-                        <div style="margin-bottom:12px;">
-                            <div style="font-size:12px; color:#64748b;">综合得分</div>
-                            <div style="font-size:28px; font-weight:bold; color:#f59e0b;">${person.totalScore.toFixed(2)}</div>
-                        </div>
-                        <div>
-                            <div style="font-size:12px; color:#64748b;">参与作品数</div>
-                            <div style="font-size:24px; font-weight:bold;">${person.worksCount}</div>
-                        </div>
-                    </div>
-                    <div style="flex:1;">
-                        ${infoHtml}
-                    </div>
-                </div>
-            </div>
-            <div style="margin-bottom:16px;">
-                <div style="margin-bottom:8px;">
-                    <span class="level-badge ${person.mainRole === '导演' ? 'level-S' : (person.mainRole === '编剧' ? 'level-Aplus' : 'level-A')}">${h(person.mainRole)}</span>
-                </div>
-                <h3 style="font-size:20px;">${h(person.name)}</h3>
-            </div>
-            ${worksHtml}
-            ${awardsHtml}
-            ${otherInfoHtml}
-        `;
+        let detailHtml = '<div style="display:flex; gap:20px; margin-bottom:16px;">' + photoHtml + '<div style="flex:1; display:flex; gap:20px;"><div style="flex:1;"><div style="margin-bottom:12px;"><div style="font-size:12px; color:#64748b;">综合得分</div><div style="font-size:28px; font-weight:bold; color:#f59e0b;">' + person.totalScore.toFixed(2) + '</div></div><div><div style="font-size:12px; color:#64748b;">参与作品数</div><div style="font-size:24px; font-weight:bold;">' + person.worksCount + '</div></div></div><div style="flex:1;">' + infoHtml + '</div></div></div>';
+        detailHtml += '<div style="margin-bottom:16px;"><div style="margin-bottom:8px;"><span class="level-badge ' + (person.mainRole === '导演' ? 'level-S' : (person.mainRole === '编剧' ? 'level-Aplus' : 'level-A')) + '">' + h(person.mainRole) + '</span></div><h3 style="font-size:20px;">' + h(person.name) + '</h3></div>';
+        detailHtml += worksHtml + awardsHtml + otherInfoHtml;
+        
         document.getElementById("personDetailContent").innerHTML = detailHtml;
-        document.getElementById("editPersonFromDetailBtn").onclick = () => { closePersonDetail(); openPersonEdit(person.id); };
-        document.getElementById("deletePersonBtn").onclick = () => { if(confirm("删除影人《" + person.name + "》？")) deletePerson(person.id); };
+        document.getElementById("editPersonFromDetailBtn").onclick = function() { closePersonDetail(); openPersonEdit(person.id); };
+        document.getElementById("deletePersonBtn").onclick = function() { if(confirm("删除影人《" + person.name + "》？")) deletePerson(person.id); };
         document.getElementById("personDetailModal").classList.add("active");
     }
 
     async function deletePerson(id) {
-        const { error } = await client.from("people").delete().eq("id", id);
+        let { error } = await client.from("people").delete().eq("id", id);
         if(error) alert("删除失败: " + error.message);
         else { 
             await loadPeopleData();
@@ -958,27 +1012,29 @@
         if (tab === "projects") {
             document.getElementById("projectsView").style.display = "block";
             document.getElementById("peopleView").style.display = "none";
-            document.querySelectorAll(".tab-btn").forEach(btn => {
-                if (btn.dataset.tab === "projects") btn.classList.add("active");
-                else btn.classList.remove("active");
-            });
+            let btns = document.querySelectorAll(".tab-btn");
+            for(let i=0; i<btns.length; i++) {
+                if(btns[i].getAttribute("data-tab") === "projects") btns[i].classList.add("active");
+                else btns[i].classList.remove("active");
+            }
         } else {
             document.getElementById("projectsView").style.display = "none";
             document.getElementById("peopleView").style.display = "block";
-            document.querySelectorAll(".tab-btn").forEach(btn => {
-                if (btn.dataset.tab === "people") btn.classList.add("active");
-                else btn.classList.remove("active");
-            });
+            let btns = document.querySelectorAll(".tab-btn");
+            for(let i=0; i<btns.length; i++) {
+                if(btns[i].getAttribute("data-tab") === "people") btns[i].classList.add("active");
+                else btns[i].classList.remove("active");
+            }
             if (peopleScores.length === 0) loadPeopleData();
         }
     }
 
     function initFilters() {
-        document.getElementById("levelFilter").onchange = () => { filters.level = document.getElementById("levelFilter").value; renderProjectsTable(); };
-        document.getElementById("typeFilter").onchange = () => { filters.type = document.getElementById("typeFilter").value; renderProjectsTable(); };
-        document.getElementById("platformFilter").onchange = () => { filters.platform = document.getElementById("platformFilter").value; renderProjectsTable(); };
-        document.getElementById("statusFilter").onchange = () => { filters.status = document.getElementById("statusFilter").value; renderProjectsTable(); };
-        document.getElementById("resetFilters").onclick = () => {
+        document.getElementById("levelFilter").onchange = function() { filters.level = this.value; renderProjectsTable(); };
+        document.getElementById("typeFilter").onchange = function() { filters.type = this.value; renderProjectsTable(); };
+        document.getElementById("platformFilter").onchange = function() { filters.platform = this.value; renderProjectsTable(); };
+        document.getElementById("statusFilter").onchange = function() { filters.status = this.value; renderProjectsTable(); };
+        document.getElementById("resetFilters").onclick = function() {
             document.getElementById("levelFilter").value = "all";
             document.getElementById("typeFilter").value = "all";
             document.getElementById("platformFilter").value = "all";
@@ -986,40 +1042,42 @@
             filters = { level: "all", type: "all", platform: "all", status: "all" };
             renderProjectsTable();
         };
-        document.getElementById("peopleRoleFilter").onchange = () => { renderPeopleTable(); };
+        document.getElementById("peopleRoleFilter").onchange = function() { renderPeopleTable(); };
     }
 
     function initPlatformEvents() {
         let otherCb = document.querySelector('#platformCheckGroup input[value="其他"]');
         let otherGroup = document.getElementById("otherInputGroup");
         let otherInput = document.getElementById("otherPlatformInput");
-        document.querySelectorAll('#platformCheckGroup input[type="checkbox"]').forEach(cb => {
-            cb.onchange = function() {
+        let checkboxes = document.querySelectorAll('#platformCheckGroup input[type="checkbox"]');
+        for(let i=0; i<checkboxes.length; i++) {
+            checkboxes[i].onchange = function() {
                 updateSelectedDisplay();
                 if(otherCb && otherCb.checked) otherGroup.style.display = "flex";
                 else { otherGroup.style.display = "none"; otherInput.value = ""; updateSelectedDisplay(); }
             };
-        });
+        }
         otherInput.oninput = updateSelectedDisplay;
         updateSelectedDisplay();
     }
 
     function bindEvents() {
-        document.getElementById("addBtn").onclick = () => openEdit(null);
+        document.getElementById("addBtn").onclick = function() { openEdit(null); };
         document.getElementById("closeEditModalBtn").onclick = closeEdit;
         document.getElementById("saveBtn").onclick = saveProject;
         document.getElementById("closeDetailBtn").onclick = closeDetail;
         document.getElementById("closePersonDetailBtn").onclick = closePersonDetail;
         document.getElementById("closePersonEditBtn").onclick = closePersonEdit;
         document.getElementById("savePersonBtn").onclick = savePersonInfo;
-        document.getElementById("editModal").onclick = e => { if(e.target === document.getElementById("editModal")) closeEdit(); };
-        document.getElementById("detailModal").onclick = e => { if(e.target === document.getElementById("detailModal")) closeDetail(); };
-        document.getElementById("personDetailModal").onclick = e => { if(e.target === document.getElementById("personDetailModal")) closePersonDetail(); };
-        document.getElementById("personEditModal").onclick = e => { if(e.target === document.getElementById("personEditModal")) closePersonEdit(); };
+        document.getElementById("editModal").onclick = function(e) { if(e.target === document.getElementById("editModal")) closeEdit(); };
+        document.getElementById("detailModal").onclick = function(e) { if(e.target === document.getElementById("detailModal")) closeDetail(); };
+        document.getElementById("personDetailModal").onclick = function(e) { if(e.target === document.getElementById("personDetailModal")) closePersonDetail(); };
+        document.getElementById("personEditModal").onclick = function(e) { if(e.target === document.getElementById("personEditModal")) closePersonEdit(); };
         
-        document.querySelectorAll(".tab-btn").forEach(btn => {
-            btn.onclick = () => switchTab(btn.dataset.tab);
-        });
+        let btns = document.querySelectorAll(".tab-btn");
+        for(let i=0; i<btns.length; i++) {
+            btns[i].onclick = function() { switchTab(this.getAttribute("data-tab")); };
+        }
     }
 
     loadProjects();
