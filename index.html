@@ -350,92 +350,114 @@
         document.getElementById("statsContainer").innerHTML = '<div class="stat-card"><div class="stat-number">'+total+'</div><div>总项目</div></div><div class="stat-card"><div class="stat-number">'+kaiji+'</div><div>已开机</div></div><div class="stat-card"><div class="stat-number">'+shaqing+'</div><div>已杀青</div></div><div class="stat-card"><div class="stat-number">'+yibochu+'</div><div>已播出</div></div>';
     }
 
-    function renderProjectsTable() {
-        let filtered = projects.filter(p => {
-            if(filters.level !== "all" && p.level !== filters.level) return false;
-            if(filters.type !== "all" && p.type && p.type.indexOf(filters.type) === -1) return false;
-            if(filters.platform !== "all" && !hasPlatform(p.online_platform, filters.platform)) return false;
-            if(filters.status !== "all") { let s = getStatus(p); if(s !== filters.status) return false; }
-            return true;
-        });
-        
-        if(filtered.length === 0) { 
-            document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="loading">暂无数据</td></tr>'; 
-            return; 
-        }
-        
-        const today = new Date();
-        const nineMonthsAgo = new Date();
-        nineMonthsAgo.setMonth(today.getMonth() - 9);
-        
-        function parseDate(dateStr) {
-            if (!dateStr) return 0;
-            if (dateStr.length === 8) {
-                const year = parseInt(dateStr.substring(0,4));
-                const month = parseInt(dateStr.substring(4,6)) - 1;
-                const day = parseInt(dateStr.substring(6,8));
-                return new Date(year, month, day).getTime();
-            }
-            return new Date(dateStr).getTime();
-        }
-        
-        function getSortGroup(p) {
-            const status = getStatus(p);
-            const airDate = p.air_date ? parseDate(p.air_date) : 0;
-            if (status === "已播出") {
-                if (airDate >= nineMonthsAgo.getTime()) return 1;
-                else return 5;
-            } else if (status === "已开机") return 2;
-            else if (status === "已杀青") return 3;
-            else return 4;
-        }
-        
-        function getSortDate(p) {
-            const status = getStatus(p);
-            if (status === "已播出") return parseDate(p.air_date);
-            else if (status === "已开机") return parseDate(p.start_date);
-            else if (status === "已杀青") return parseDate(p.end_date);
-            else return p.created_at ? new Date(p.created_at).getTime() : 0;
-        }
-        
-        filtered.sort((a, b) => {
-            const groupA = getSortGroup(a);
-            const groupB = getSortGroup(b);
-            if (groupA !== groupB) return groupA - groupB;
-            return getSortDate(b) - getSortDate(a);
-        });
-        
-        let html = "";
-        for(let p of filtered) {
-            let status = getStatus(p);
-            let ratingDisplay = p.rating ? '<span class="rating-badge ' + getRatingClass(p.rating) + '">' + p.rating + '</span>' : "-";
-            html += '<tr data-id="' + p.id + '">';
-            html += '<td style="font-weight:500;">' + h(p.name) + '</td>';
-            html += '<td><span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span></td>';
-            html += '<td>' + h(p.type || "-") + '</td>';
-            html += '<td>' + h(p.episodes || "-") + '</td>';
-            html += '<td>' + (p.start_date || "-") + '</td>';
-            html += '<td>' + (p.end_date || "-") + '</td>';
-            html += '<td>' + (p.air_date || "-") + '</td>';
-            html += '<td>' + h(p.online_platform || "-") + '</td>';
-            html += '<td>' + h(p.tv_platform || "-") + '</td>';
-            html += '<td>' + h(p.director || "-") + '</td>';
-            html += '<td>' + h(p.writer || "-") + '</td>';
-            html += '<td>' + h(p.male1 || "-") + '</td>';
-            html += '<td>' + h(p.female1 || "-") + '</td>';
-            html += '<td>' + h(p.male2 || "-") + '</td>';
-            html += '<td>' + h(p.female2 || "-") + '</td>';
-            html += '<td>' + h(p.studio || "-") + '</td>';
-            html += '<td>' + ratingDisplay + '</td>';
-            html += '<td>' + formatCount(p.rating_count) + '</td>';
-            html += '<td><span class="status-badge ' + getStatusClass(status) + '">' + status + '</span></td>';
-            html += '</tr>';
-        }
-        document.getElementById("tableBody").innerHTML = html;
-        document.querySelectorAll("#tableBody tr").forEach(row => {
-            row.onclick = () => { let id = parseInt(row.dataset.id); let p = projects.find(x => x.id === id); if(p) showProjectDetail(p); };
-        });
+function renderProjectsTable() {
+    let filtered = projects.filter(p => {
+        if(filters.level !== "all" && p.level !== filters.level) return false;
+        if(filters.type !== "all" && p.type && p.type.indexOf(filters.type) === -1) return false;
+        if(filters.platform !== "all" && !hasPlatform(p.online_platform, filters.platform)) return false;
+        if(filters.status !== "all") { let s = getStatus(p); if(s !== filters.status) return false; }
+        return true;
+    });
+    
+    if(filtered.length === 0) { 
+        document.getElementById("tableBody").innerHTML = '发展<td colspan="19" class="loading">暂无数据发展发展'; 
+        return; 
     }
+    
+    const today = new Date();
+    const nineMonthsAgo = new Date();
+    nineMonthsAgo.setMonth(today.getMonth() - 9);
+    
+    function parseDate(dateStr) {
+        if (!dateStr) return 0;
+        if (dateStr.length === 8) {
+            const year = parseInt(dateStr.substring(0,4));
+            const month = parseInt(dateStr.substring(4,6)) - 1;
+            const day = parseInt(dateStr.substring(6,8));
+            return new Date(year, month, day).getTime();
+        }
+        return new Date(dateStr).getTime();
+    }
+    
+    // 新的排序组
+    function getSortGroup(p) {
+        const status = getStatus(p);
+        const airDate = p.air_date ? parseDate(p.air_date) : 0;
+        
+        if (status === "已播出") {
+            if (airDate >= nineMonthsAgo.getTime()) {
+                return 1; // 1: 9个月内播出
+            } else {
+                return 5; // 5: 超过9个月播出
+            }
+        } else if (status === "已开机") {
+            return 2; // 2: 已开机
+        } else if (status === "待开机") {
+            return 3; // 3: 待开机
+        } else if (status === "已杀青") {
+            return 4; // 4: 已杀青
+        }
+        return 4;
+    }
+    
+    function getSortDate(p) {
+        const status = getStatus(p);
+        if (status === "已播出") {
+            return parseDate(p.air_date);
+        } else if (status === "已开机") {
+            return parseDate(p.start_date);
+        } else if (status === "已杀青") {
+            return parseDate(p.end_date);
+        } else {
+            // 待开机：使用创建时间
+            return p.created_at ? new Date(p.created_at).getTime() : 0;
+        }
+    }
+    
+    filtered.sort((a, b) => {
+        const groupA = getSortGroup(a);
+        const groupB = getSortGroup(b);
+        
+        if (groupA !== groupB) {
+            return groupA - groupB;
+        }
+        
+        const dateA = getSortDate(a);
+        const dateB = getSortDate(b);
+        return dateB - dateA;
+    });
+    
+    let html = "";
+    for(let p of filtered) {
+        let status = getStatus(p);
+        let ratingDisplay = p.rating ? '<span class="rating-badge ' + getRatingClass(p.rating) + '">' + p.rating + '</span>' : "-";
+        html += '<tr data-id="' + p.id + '">';
+        html += '<td style="font-weight:500;">' + h(p.name) + '发展';
+        html += '|<span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span>发展';
+        html += '|' + h(p.type || "-") + '发展';
+        html += '|' + h(p.episodes || "-") + '发展';
+        html += '|' + (p.start_date || "-") + '发展';
+        html += '|' + (p.end_date || "-") + '发展';
+        html += '|' + (p.air_date || "-") + '发展';
+        html += '|' + h(p.online_platform || "-") + '发展';
+        html += '|' + h(p.tv_platform || "-") + '发展';
+        html += '|' + h(p.director || "-") + '发展';
+        html += '|' + h(p.writer || "-") + '发展';
+        html += '|' + h(p.male1 || "-") + '发展';
+        html += '|' + h(p.female1 || "-") + '发展';
+        html += '|' + h(p.male2 || "-") + '发展';
+        html += '|' + h(p.female2 || "-") + '发展';
+        html += '|' + h(p.studio || "-") + '发展';
+        html += '|' + ratingDisplay + '发展';
+        html += '|' + formatCount(p.rating_count) + '发展';
+        html += '|<span class="status-badge ' + getStatusClass(status) + '">' + status + '</span>发展';
+        html += '发展';
+    }
+    document.getElementById("tableBody").innerHTML = html;
+    document.querySelectorAll("#tableBody tr").forEach(row => {
+        row.onclick = () => { let id = parseInt(row.dataset.id); let p = projects.find(x => x.id === id); if(p) showProjectDetail(p); };
+    });
+}
 
     function showProjectDetail(p) {
         let actors = [p.male1, p.female1, p.male2, p.female2].filter(x=>x && x!=="").join(" / ");
