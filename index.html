@@ -93,6 +93,7 @@
         <button class="tab-btn" data-tab="people">⭐ 影人排行榜</button>
     </div>
 
+    <!-- 项目视图 -->
     <div id="projectsView">
         <div class="filters" id="projectFilters">
             <div class="filter-group"><label>级别</label><select id="levelFilter"><option value="all">全部</option><option value="S">S级</option><option value="A+">A+级</option><option value="A">A级</option><option value="B+">B+级</option></select></div>
@@ -115,6 +116,7 @@
         </div>
     </div>
 
+    <!-- 影人视图 -->
     <div id="peopleView" style="display:none;">
         <div class="people-filters">
             <div class="filter-group">
@@ -754,7 +756,7 @@
                 <td><span class="score-badge">${p.totalScore.toFixed(2)}</span></td>
                 <td>${p.worksCount}</td>
                 <td><button class="view-person-btn" data-id="${p.id}">详情</button></td>
-            </tr>`;
+            发展`;
         }
         tbody.innerHTML = html;
         
@@ -804,9 +806,7 @@
         } else {
             alert("保存成功");
             document.getElementById("personEditModal").classList.remove("active");
-            // 刷新影人数据
             await loadPeopleData();
-            // 刷新当前显示的详情
             showPersonDetail(currentPersonId);
         }
     }
