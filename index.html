@@ -51,7 +51,7 @@
         .modal-overlay.active .modal-drawer { transform: translateY(0); }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 12px; margin-bottom: 4px; color: #334155; font-weight: 500; }
-        .form-group input, .form-group select { width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; font-family: inherit; }
         .form-row { display: flex; gap: 12px; }
         .form-row .form-group { flex: 1; }
         .btn-submit { background: #1e293b; color: white; border: none; width: 100%; padding: 12px; border-radius: 40px; font-size: 16px; font-weight: 600; margin-top: 12px; cursor: pointer; }
@@ -77,6 +77,7 @@
         .poster-container { display: flex; gap: 20px; margin-bottom: 16px; flex-wrap: wrap; }
         .view-person-btn { background: #3b82f6; color: white; border: none; padding: 4px 12px; border-radius: 16px; cursor: pointer; font-size: 11px; }
         .people-filters { margin-bottom: 16px; }
+        textarea { resize: vertical; }
     </style>
 </head>
 <body>
@@ -92,7 +93,6 @@
         <button class="tab-btn" data-tab="people">⭐ 影人排行榜</button>
     </div>
 
-    <!-- 项目视图 -->
     <div id="projectsView">
         <div class="filters" id="projectFilters">
             <div class="filter-group"><label>级别</label><select id="levelFilter"><option value="all">全部</option><option value="S">S级</option><option value="A+">A+级</option><option value="A">A级</option><option value="B+">B+级</option></select></div>
@@ -109,15 +109,12 @@
                         <th>网播平台</th><th>台播平台</th>
                         <th>导演</th><th>编剧</th><th>男主</th><th>女主</th><th>男二</th><th>女二</th>
                         <th>出品/制作</th><th>豆瓣评分</th><th>评分人次</th><th>状态</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody"><tr><td colspan="19" class="loading">加载数据中...</td></tr>
-            </tbody>
-        </table>
+                     </thead>
+                <tbody id="tableBody">发展<td colspan="19" class="loading">加载数据中...发展发展</tbody>
+            划
         </div>
     </div>
 
-    <!-- 影人视图 -->
     <div id="peopleView" style="display:none;">
         <div class="people-filters">
             <div class="filter-group">
@@ -133,11 +130,9 @@
         <div class="table-wrapper">
             <table class="people-table">
                 <thead>
-                    <tr><th>姓名</th><th>职业</th><th>综合得分</th><th>代表作数量</th><th>操作</th></tr>
-                </thead>
-                <tbody id="peopleTableBody"><tr><td colspan="5" class="loading">加载影人数据...</td></tr>
-            </tbody>
-        </table>
+                    <tr><th>姓名</th><th>职业</th><th>综合得分</th><th>代表作数量</th><th>操作</th>?</thead>
+                <tbody id="peopleTableBody">发展<td colspan="5" class="loading">加载影人数据...发展发展</tbody>
+            划
         </div>
     </div>
 
@@ -145,7 +140,7 @@
 </div>
 <button class="fab" id="addBtn">+</button>
 
-<!-- 编辑模态框 -->
+<!-- 项目编辑模态框 -->
 <div id="editModal" class="modal-overlay">
     <div class="modal-drawer">
         <div style="display:flex; justify-content:space-between; margin-bottom:16px;"><span id="modalTitle" style="font-size:18px; font-weight:bold;">添加项目</span><button id="closeEditModalBtn" style="background:none; border:none; font-size:24px;">&times;</button></div>
@@ -176,6 +171,21 @@
     </div>
 </div>
 
+<!-- 影人编辑模态框 -->
+<div id="personEditModal" class="modal-overlay">
+    <div class="modal-drawer">
+        <div style="display:flex; justify-content:space-between; margin-bottom:16px;"><span id="personEditTitle" style="font-size:18px; font-weight:bold;">编辑影人</span><button id="closePersonEditBtn" style="background:none; border:none; font-size:24px;">&times;</button></div>
+        <div class="form-group"><label>姓名</label><input type="text" id="personName" readonly style="background:#f1f5f9;"></div>
+        <div class="form-group"><label>出生年月日</label><input type="text" id="personBirthDate" placeholder="如：19901215 或 1990-12-15"></div>
+        <div class="form-group"><label>身高</label><input type="text" id="personHeight" placeholder="如：175cm"></div>
+        <div class="form-group"><label>籍贯</label><input type="text" id="personHometown" placeholder="如：北京"></div>
+        <div class="form-group"><label>毕业院校</label><input type="text" id="personSchool" placeholder="毕业院校"></div>
+        <div class="form-group"><label>主要获奖</label><textarea id="personAwards" rows="3" placeholder="每行一个奖项"></textarea></div>
+        <div class="form-group"><label>其他信息</label><textarea id="personOtherInfo" rows="3" placeholder="如：爱好、语言等"></textarea></div>
+        <button class="btn-submit" id="savePersonBtn">保存修改</button>
+    </div>
+</div>
+
 <!-- 项目详情模态框 -->
 <div id="detailModal" class="modal-overlay">
     <div class="modal-drawer">
@@ -190,6 +200,7 @@
     <div class="modal-drawer">
         <div style="display:flex; justify-content:space-between;"><span style="font-size:18px; font-weight:bold;">影人详情</span><button id="closePersonDetailBtn" style="background:none; border:none; font-size:24px;">&times;</button></div>
         <div id="personDetailContent"></div>
+        <div class="button-group"><button class="btn-submit btn-edit" id="editPersonFromDetailBtn">编辑影人</button><button class="btn-submit btn-delete" id="deletePersonBtn">删除影人</button></div>
     </div>
 </div>
 
@@ -278,6 +289,7 @@
     let peopleData = [];
     let peopleScores = [];
     let currentId = null;
+    let currentPersonId = null;
     let filters = { level: "all", type: "all", platform: "all", status: "all" };
     let currentTab = "projects";
 
@@ -336,7 +348,7 @@
     }
 
     async function loadProjects() {
-        document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="loading">加载数据中...</td></tr>';
+        document.getElementById("tableBody").innerHTML = '发展<td colspan="19" class="loading">加载数据中...发展发展';
         let { data, error } = await client.from("projects").select("*").order("id", { ascending: false });
         if(error) { console.error(error); return; }
         projects = data || [];
@@ -350,114 +362,93 @@
         document.getElementById("statsContainer").innerHTML = '<div class="stat-card"><div class="stat-number">'+total+'</div><div>总项目</div></div><div class="stat-card"><div class="stat-number">'+kaiji+'</div><div>已开机</div></div><div class="stat-card"><div class="stat-number">'+shaqing+'</div><div>已杀青</div></div><div class="stat-card"><div class="stat-number">'+yibochu+'</div><div>已播出</div></div>';
     }
 
-function renderProjectsTable() {
-    let filtered = projects.filter(p => {
-        if(filters.level !== "all" && p.level !== filters.level) return false;
-        if(filters.type !== "all" && p.type && p.type.indexOf(filters.type) === -1) return false;
-        if(filters.platform !== "all" && !hasPlatform(p.online_platform, filters.platform)) return false;
-        if(filters.status !== "all") { let s = getStatus(p); if(s !== filters.status) return false; }
-        return true;
-    });
-    
-    if(filtered.length === 0) { 
-        document.getElementById("tableBody").innerHTML = '发展<td colspan="19" class="loading">暂无数据发展发展'; 
-        return; 
-    }
-    
-    const today = new Date();
-    const nineMonthsAgo = new Date();
-    nineMonthsAgo.setMonth(today.getMonth() - 9);
-    
-    function parseDate(dateStr) {
-        if (!dateStr) return 0;
-        if (dateStr.length === 8) {
-            const year = parseInt(dateStr.substring(0,4));
-            const month = parseInt(dateStr.substring(4,6)) - 1;
-            const day = parseInt(dateStr.substring(6,8));
-            return new Date(year, month, day).getTime();
-        }
-        return new Date(dateStr).getTime();
-    }
-    
-    // 新的排序组
-    function getSortGroup(p) {
-        const status = getStatus(p);
-        const airDate = p.air_date ? parseDate(p.air_date) : 0;
+    function renderProjectsTable() {
+        let filtered = projects.filter(p => {
+            if(filters.level !== "all" && p.level !== filters.level) return false;
+            if(filters.type !== "all" && p.type && p.type.indexOf(filters.type) === -1) return false;
+            if(filters.platform !== "all" && !hasPlatform(p.online_platform, filters.platform)) return false;
+            if(filters.status !== "all") { let s = getStatus(p); if(s !== filters.status) return false; }
+            return true;
+        });
         
-        if (status === "已播出") {
-            if (airDate >= nineMonthsAgo.getTime()) {
-                return 1; // 1: 9个月内播出
-            } else {
-                return 5; // 5: 超过9个月播出
+        if(filtered.length === 0) { 
+            document.getElementById("tableBody").innerHTML = '发展<td colspan="19" class="loading">暂无数据发展发展'; 
+            return; 
+        }
+        
+        const today = new Date();
+        const nineMonthsAgo = new Date();
+        nineMonthsAgo.setMonth(today.getMonth() - 9);
+        
+        function parseDate(dateStr) {
+            if (!dateStr) return 0;
+            if (dateStr.length === 8) {
+                const year = parseInt(dateStr.substring(0,4));
+                const month = parseInt(dateStr.substring(4,6)) - 1;
+                const day = parseInt(dateStr.substring(6,8));
+                return new Date(year, month, day).getTime();
             }
-        } else if (status === "已开机") {
-            return 2; // 2: 已开机
-        } else if (status === "待开机") {
-            return 3; // 3: 待开机
-        } else if (status === "已杀青") {
-            return 4; // 4: 已杀青
-        }
-        return 4;
-    }
-    
-    function getSortDate(p) {
-        const status = getStatus(p);
-        if (status === "已播出") {
-            return parseDate(p.air_date);
-        } else if (status === "已开机") {
-            return parseDate(p.start_date);
-        } else if (status === "已杀青") {
-            return parseDate(p.end_date);
-        } else {
-            // 待开机：使用创建时间
-            return p.created_at ? new Date(p.created_at).getTime() : 0;
-        }
-    }
-    
-    filtered.sort((a, b) => {
-        const groupA = getSortGroup(a);
-        const groupB = getSortGroup(b);
-        
-        if (groupA !== groupB) {
-            return groupA - groupB;
+            return new Date(dateStr).getTime();
         }
         
-        const dateA = getSortDate(a);
-        const dateB = getSortDate(b);
-        return dateB - dateA;
-    });
-    
-    let html = "";
-    for(let p of filtered) {
-        let status = getStatus(p);
-        let ratingDisplay = p.rating ? '<span class="rating-badge ' + getRatingClass(p.rating) + '">' + p.rating + '</span>' : "-";
-        html += '<tr data-id="' + p.id + '">';
-        html += '<td style="font-weight:500;">' + h(p.name) + '发展';
-        html += '|<span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span>发展';
-        html += '|' + h(p.type || "-") + '发展';
-        html += '|' + h(p.episodes || "-") + '发展';
-        html += '|' + (p.start_date || "-") + '发展';
-        html += '|' + (p.end_date || "-") + '发展';
-        html += '|' + (p.air_date || "-") + '发展';
-        html += '|' + h(p.online_platform || "-") + '发展';
-        html += '|' + h(p.tv_platform || "-") + '发展';
-        html += '|' + h(p.director || "-") + '发展';
-        html += '|' + h(p.writer || "-") + '发展';
-        html += '|' + h(p.male1 || "-") + '发展';
-        html += '|' + h(p.female1 || "-") + '发展';
-        html += '|' + h(p.male2 || "-") + '发展';
-        html += '|' + h(p.female2 || "-") + '发展';
-        html += '|' + h(p.studio || "-") + '发展';
-        html += '|' + ratingDisplay + '发展';
-        html += '|' + formatCount(p.rating_count) + '发展';
-        html += '|<span class="status-badge ' + getStatusClass(status) + '">' + status + '</span>发展';
-        html += '发展';
+        function getSortGroup(p) {
+            const status = getStatus(p);
+            const airDate = p.air_date ? parseDate(p.air_date) : 0;
+            if (status === "已播出") {
+                if (airDate >= nineMonthsAgo.getTime()) return 1;
+                else return 5;
+            } else if (status === "已开机") return 2;
+            else if (status === "待开机") return 3;
+            else if (status === "已杀青") return 4;
+            return 4;
+        }
+        
+        function getSortDate(p) {
+            const status = getStatus(p);
+            if (status === "已播出") return parseDate(p.air_date);
+            else if (status === "已开机") return parseDate(p.start_date);
+            else if (status === "已杀青") return parseDate(p.end_date);
+            else return p.created_at ? new Date(p.created_at).getTime() : 0;
+        }
+        
+        filtered.sort((a, b) => {
+            const groupA = getSortGroup(a);
+            const groupB = getSortGroup(b);
+            if (groupA !== groupB) return groupA - groupB;
+            return getSortDate(b) - getSortDate(a);
+        });
+        
+        let html = "";
+        for(let p of filtered) {
+            let status = getStatus(p);
+            let ratingDisplay = p.rating ? '<span class="rating-badge ' + getRatingClass(p.rating) + '">' + p.rating + '</span>' : "-";
+            html += '<tr data-id="' + p.id + '">';
+            html += '<td style="font-weight:500;">' + h(p.name) + '发展';
+            html += '|<span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span>发展';
+            html += '|' + h(p.type || "-") + '发展';
+            html += '|' + h(p.episodes || "-") + '发展';
+            html += '|' + (p.start_date || "-") + '发展';
+            html += '|' + (p.end_date || "-") + '发展';
+            html += '|' + (p.air_date || "-") + '发展';
+            html += '|' + h(p.online_platform || "-") + '发展';
+            html += '|' + h(p.tv_platform || "-") + '发展';
+            html += '|' + h(p.director || "-") + '发展';
+            html += '|' + h(p.writer || "-") + '发展';
+            html += '|' + h(p.male1 || "-") + '发展';
+            html += '|' + h(p.female1 || "-") + '发展';
+            html += '|' + h(p.male2 || "-") + '发展';
+            html += '|' + h(p.female2 || "-") + '发展';
+            html += '|' + h(p.studio || "-") + '发展';
+            html += '|' + ratingDisplay + '发展';
+            html += '|' + formatCount(p.rating_count) + '发展';
+            html += '|<span class="status-badge ' + getStatusClass(status) + '">' + status + '</span>发展';
+            html += '发展';
+        }
+        document.getElementById("tableBody").innerHTML = html;
+        document.querySelectorAll("#tableBody tr").forEach(row => {
+            row.onclick = () => { let id = parseInt(row.dataset.id); let p = projects.find(x => x.id === id); if(p) showProjectDetail(p); };
+        });
     }
-    document.getElementById("tableBody").innerHTML = html;
-    document.querySelectorAll("#tableBody tr").forEach(row => {
-        row.onclick = () => { let id = parseInt(row.dataset.id); let p = projects.find(x => x.id === id); if(p) showProjectDetail(p); };
-    });
-}
 
     function showProjectDetail(p) {
         let actors = [p.male1, p.female1, p.male2, p.female2].filter(x=>x && x!=="").join(" / ");
@@ -783,6 +774,43 @@ function renderProjectsTable() {
         });
     }
 
+    function openPersonEdit(personId) {
+        const person = peopleScores.find(p => p.id === personId);
+        if (!person) return;
+        currentPersonId = personId;
+        document.getElementById("personName").value = person.name;
+        document.getElementById("personBirthDate").value = person.birth_date || "";
+        document.getElementById("personHeight").value = person.height || "";
+        document.getElementById("personHometown").value = person.hometown || "";
+        document.getElementById("personSchool").value = person.school || "";
+        document.getElementById("personAwards").value = person.awards || "";
+        document.getElementById("personOtherInfo").value = person.other_info || "";
+        document.getElementById("personEditModal").classList.add("active");
+    }
+
+    async function savePersonInfo() {
+        const updateData = {
+            birth_date: document.getElementById("personBirthDate").value,
+            height: document.getElementById("personHeight").value,
+            hometown: document.getElementById("personHometown").value,
+            school: document.getElementById("personSchool").value,
+            awards: document.getElementById("personAwards").value,
+            other_info: document.getElementById("personOtherInfo").value
+        };
+        
+        const { error } = await client.from("people").update(updateData).eq("id", currentPersonId);
+        if (error) {
+            alert("保存失败: " + error.message);
+        } else {
+            alert("保存成功");
+            document.getElementById("personEditModal").classList.remove("active");
+            // 刷新影人数据
+            await loadPeopleData();
+            // 刷新当前显示的详情
+            showPersonDetail(currentPersonId);
+        }
+    }
+
     function showPersonDetail(personId) {
         const person = peopleScores.find(p => p.id === personId);
         if (!person) return;
@@ -903,11 +931,27 @@ function renderProjectsTable() {
             ${otherInfoHtml}
         `;
         document.getElementById("personDetailContent").innerHTML = detailHtml;
+        document.getElementById("editPersonFromDetailBtn").onclick = () => { closePersonDetail(); openPersonEdit(person.id); };
+        document.getElementById("deletePersonBtn").onclick = () => { if(confirm("删除影人《" + person.name + "》？")) deletePerson(person.id); };
         document.getElementById("personDetailModal").classList.add("active");
+    }
+
+    async function deletePerson(id) {
+        const { error } = await client.from("people").delete().eq("id", id);
+        if(error) alert("删除失败: " + error.message);
+        else { 
+            await loadPeopleData();
+            closePersonDetail();
+        }
     }
 
     function closePersonDetail() {
         document.getElementById("personDetailModal").classList.remove("active");
+    }
+
+    function closePersonEdit() {
+        document.getElementById("personEditModal").classList.remove("active");
+        currentPersonId = null;
     }
 
     function switchTab(tab) {
@@ -967,9 +1011,12 @@ function renderProjectsTable() {
         document.getElementById("saveBtn").onclick = saveProject;
         document.getElementById("closeDetailBtn").onclick = closeDetail;
         document.getElementById("closePersonDetailBtn").onclick = closePersonDetail;
+        document.getElementById("closePersonEditBtn").onclick = closePersonEdit;
+        document.getElementById("savePersonBtn").onclick = savePersonInfo;
         document.getElementById("editModal").onclick = e => { if(e.target === document.getElementById("editModal")) closeEdit(); };
         document.getElementById("detailModal").onclick = e => { if(e.target === document.getElementById("detailModal")) closeDetail(); };
         document.getElementById("personDetailModal").onclick = e => { if(e.target === document.getElementById("personDetailModal")) closePersonDetail(); };
+        document.getElementById("personEditModal").onclick = e => { if(e.target === document.getElementById("personEditModal")) closePersonEdit(); };
         
         document.querySelectorAll(".tab-btn").forEach(btn => {
             btn.onclick = () => switchTab(btn.dataset.tab);
