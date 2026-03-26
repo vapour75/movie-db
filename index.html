@@ -110,9 +110,11 @@
                         <th>网播平台</th><th>台播平台</th>
                         <th>导演</th><th>编剧</th><th>男主</th><th>女主</th><th>男二</th><th>女二</th>
                         <th>出品/制作</th><th>豆瓣评分</th><th>评分人次</th><th>状态</th>
-                     </thead>
-                <tbody id="tableBody">发展<td colspan="19" class="loading">加载数据中...发展发展</tbody>
-            划
+                    </tr>
+                </thead>
+                <tbody id="tableBody"><tr><td colspan="19" class="loading">加载数据中...</td></tr>
+            </tbody>
+        </table>
         </div>
     </div>
 
@@ -132,9 +134,11 @@
         <div class="table-wrapper">
             <table class="people-table">
                 <thead>
-                    <tr><th>姓名</th><th>职业</th><th>综合得分</th><th>代表作数量</th><th>操作</th>?</thead>
-                <tbody id="peopleTableBody">发展<td colspan="5" class="loading">加载影人数据...发展发展</tbody>
-            划
+                    <tr><th>姓名</th><th>职业</th><th>综合得分</th><th>代表作数量</th><th>操作</th></tr>
+                </thead>
+                <tbody id="peopleTableBody"><tr><td colspan="5" class="loading">加载影人数据...</td></tr>
+            </tbody>
+        </table>
         </div>
     </div>
 
@@ -350,7 +354,7 @@
     }
 
     async function loadProjects() {
-        document.getElementById("tableBody").innerHTML = '发展<td colspan="19" class="loading">加载数据中...发展发展';
+        document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="loading">加载数据中...</td></tr>';
         let { data, error } = await client.from("projects").select("*").order("id", { ascending: false });
         if(error) { console.error(error); return; }
         projects = data || [];
@@ -374,7 +378,7 @@
         });
         
         if(filtered.length === 0) { 
-            document.getElementById("tableBody").innerHTML = '发展<td colspan="19" class="loading">暂无数据发展发展'; 
+            document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="loading">暂无数据</td></tr>';
             return; 
         }
         
@@ -756,7 +760,7 @@
                 <td><span class="score-badge">${p.totalScore.toFixed(2)}</span></td>
                 <td>${p.worksCount}</td>
                 <td><button class="view-person-btn" data-id="${p.id}">详情</button></td>
-            发展`;
+             </tr>`;
         }
         tbody.innerHTML = html;
         
