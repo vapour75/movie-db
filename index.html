@@ -758,6 +758,49 @@
             return CLOUDINARY_BASE_URL + poster; 
         }
 
+        async function handleImageUpload(file) {
+    const options = {
+        maxSizeMB: 0.5,
+        maxWidthOrHeight: 800,
+        useWebWorker: true
+    };
+    
+    try {
+        let compressedFile = file;
+        if (file.size > 500 * 1024) {
+            compressedFile = await imageCompression(file, options);
+        }
+        
+        const formData = new FormData();
+        formData.append('file', compressedFile);
+        formData.append('upload_preset', 'my_movie_upload');  // ← 检查这里
+        formData.append('cloud_name', CLOUDINARY_CLOUD_NAME);
+        
+        const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.public_id) {
+            currentUploadFiles.push(data.public_id);
+            addImagePreview(data.public_id, data.secure_url);
+            
+            const posterInput = document.getElementById('projPoster');
+            const existingPosters = posterInput.value ? posterInput.value.split(',') : [];
+            existingPosters.push(data.public_id);
+            posterInput.value = existingPosters.join(',');
+            
+            // 可选：显示成功提示
+            console.log('上传成功:', data.secure_url);
+        }
+    } catch (error) {
+        console.error('上传失败:', error);
+        alert('图片上传失败，请重试');
+    }
+}
+        
         function getVoteWeight(count) {
             if (!count) return 1.0; 
             let num = parseFloat(count); 
