@@ -1249,58 +1249,72 @@
             currentUploadFiles = [];
         }
 
-        async function saveProject() {
-            let name = document.getElementById("projName").value.trim(); 
-            if (!name) { 
-                alert("请填写剧目名称"); 
-                return; 
-            } 
-            let selected = getSelectedPlatforms(); 
-            let data = {
-                name: name, 
-                level: document.getElementById("projLevel").value, 
-                type: document.getElementById("projType").value, 
-                episodes: document.getElementById("projEpisodes").value, 
-                start_date: document.getElementById("projStart").value, 
-                end_date: document.getElementById("projEnd").value, 
-                air_date: document.getElementById("projAirDate").value, 
-                online_platform: selected.join("、"), 
-                tv_platform: document.getElementById("projTVPlatform").value, 
-                director: document.getElementById("projDirector").value, 
-                writer: document.getElementById("projWriter").value, 
-                male1: document.getElementById("projMale1").value, 
-                female1: document.getElementById("projFemale1").value, 
-                male2: document.getElementById("projMale2").value, 
-                female2: document.getElementById("projFemale2").value, 
-                studio: document.getElementById("projStudio").value, 
-                producer: document.getElementById("projProducer").value, 
-                co_producer: document.getElementById("projCoProducer").value, 
-                rating: document.getElementById("projRating").value, 
-                rating_count: document.getElementById("projRatingCount").value, 
-                poster: document.getElementById("projPoster").value, 
-                original: document.getElementById("projOriginal").value
-            }; 
-            let result; 
-            let newProjectId; 
-            if (currentId) { 
-                result = await client.from("projects").update(data).eq("id", currentId); 
-                newProjectId = currentId; 
-            } else { 
-                result = await client.from("projects").insert([data]).select(); 
-                if (result.data && result.data.length > 0) { 
-                    newProjectId = result.data[0].id; 
-                } 
-            } 
-            if (result.error) { 
-                alert("保存失败: " + result.error.message); 
-                return; 
-            } 
-            if (!currentId && newProjectId) { 
-                await syncPeopleForProject(newProjectId, data); 
-            } 
-            loadProjects(); 
-            closeEdit();
+async function saveProject() {
+    let name = document.getElementById("projName").value.trim(); 
+    if (!name) { 
+        alert("请填写剧目名称"); 
+        return; 
+    } 
+    let selected = getSelectedPlatforms(); 
+    
+    // 收集表单数据（包括海报URL）
+    let data = {
+        name: name, 
+        level: document.getElementById("projLevel").value, 
+        type: document.getElementById("projType").value, 
+        episodes: document.getElementById("projEpisodes").value, 
+        start_date: document.getElementById("projStart").value, 
+        end_date: document.getElementById("projEnd").value, 
+        air_date: document.getElementById("projAirDate").value, 
+        online_platform: selected.join("、"), 
+        tv_platform: document.getElementById("projTVPlatform").value, 
+        director: document.getElementById("projDirector").value, 
+        writer: document.getElementById("projWriter").value, 
+        male1: document.getElementById("projMale1").value, 
+        female1: document.getElementById("projFemale1").value, 
+        male2: document.getElementById("projMale2").value, 
+        female2: document.getElementById("projFemale2").value, 
+        studio: document.getElementById("projStudio").value, 
+        producer: document.getElementById("projProducer").value, 
+        co_producer: document.getElementById("projCoProducer").value, 
+        rating: document.getElementById("projRating").value, 
+        rating_count: document.getElementById("projRatingCount").value, 
+        poster: document.getElementById("projPoster").value,  // 图片上传后自动填入
+        original: document.getElementById("projOriginal").value
+    }; 
+    
+    let result; 
+    let newProjectId; 
+    
+    if (currentId) { 
+        // 编辑项目
+        result = await client.from("projects").update(data).eq("id", currentId); 
+        newProjectId = currentId; 
+    } else { 
+        // 新增项目
+        result = await client.from("projects").insert([data]).select(); 
+        if (result.data && result.data.length > 0) { 
+            newProjectId = result.data[0].id; 
+        } 
+    } 
+    
+    if (result.error) { 
+        alert("保存失败: " + result.error.message); 
+        return; 
+    } 
+    
+    // 同步影人关联（新增和编辑都需要）
+    if (newProjectId) {
+        // 如果是编辑，先删除旧关联
+        if (currentId) {
+            await client.from("person_projects").delete().eq("project_id", newProjectId);
         }
+        await syncPeopleForProject(newProjectId, data);
+    }
+    
+    loadProjects(); 
+    closeEdit();
+}
 
         async function syncPeopleForProject(projectId, projectData) {
             let personRoles = []; 
