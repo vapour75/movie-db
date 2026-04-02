@@ -503,121 +503,6 @@
             height: 100%;
             object-fit: cover;
         }
-
-        /* 时间线样式 */
-        .timeline-container {
-            background: #f8fafc;
-            border-radius: 16px;
-            padding: 16px;
-            margin: 16px 0;
-        }
-
-        .timeline-steps {
-            display: flex;
-            justify-content: space-between;
-            position: relative;
-            margin: 20px 0;
-        }
-
-        .timeline-steps::before {
-            content: '';
-            position: absolute;
-            top: 24px;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: #e2e8f0;
-            border-radius: 2px;
-            z-index: 1;
-        }
-
-        .timeline-step {
-            flex: 1;
-            text-align: center;
-            position: relative;
-            z-index: 2;
-            background: transparent;
-        }
-
-        .step-icon {
-            width: 48px;
-            height: 48px;
-            background: white;
-            border: 2px solid #e2e8f0;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 8px;
-            font-size: 20px;
-            transition: all 0.3s;
-            position: relative;
-            z-index: 2;
-        }
-
-        .step-icon.completed {
-            background: #10b981;
-            border-color: #10b981;
-            color: white;
-        }
-
-        .step-icon.active {
-            background: #1e293b;
-            border-color: #1e293b;
-            color: white;
-            transform: scale(1.05);
-        }
-
-        .step-label {
-            font-size: 12px;
-            font-weight: 500;
-            color: #64748b;
-        }
-
-        .step-label.active {
-            color: #1e293b;
-            font-weight: 600;
-        }
-
-        .step-label.completed {
-            color: #10b981;
-        }
-
-        .step-date {
-            font-size: 11px;
-            color: #94a3b8;
-            margin-top: 4px;
-        }
-
-        .duration-info {
-            margin-top: 16px;
-            padding-top: 12px;
-            border-top: 1px solid #e2e8f0;
-            font-size: 12px;
-            color: #475569;
-            display: flex;
-            justify-content: center;
-            gap: 24px;
-            flex-wrap: wrap;
-        }
-
-        .duration-item {
-            background: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .duration-item .label {
-            color: #64748b;
-        }
-
-        .duration-item .days {
-            font-weight: 600;
-            color: #1e293b;
-        }
     </style>
 </head>
 
@@ -1155,76 +1040,6 @@
             return new Date(dateStr).getTime();
         }
 
-        // 生成时间线HTML
-        function generateTimeline(project) {
-            const steps = [
-                { key: 'start_date', label: '开机', icon: '🎬', date: project.start_date },
-                { key: 'end_date', label: '杀青', icon: '✅', date: project.end_date },
-                { key: 'air_date', label: '播出', icon: '📺', date: project.air_date }
-            ];
-            
-            let currentStep = -1;
-            if (project.air_date && project.air_date !== "") {
-                currentStep = 2;
-            } else if (project.end_date && project.end_date !== "") {
-                currentStep = 1;
-            } else if (project.start_date && project.start_date !== "") {
-                currentStep = 0;
-            }
-            
-            // 计算天数
-            const shootingDays = calculateDaysBetween(project.start_date, project.end_date);
-            const waitingDays = calculateDaysBetween(project.end_date, project.air_date);
-            
-            let html = '<div class="timeline-container">';
-            html += '<div style="font-size:14px; font-weight:600; margin-bottom:16px;">📅 项目进度时间线</div>';
-            html += '<div class="timeline-steps">';
-            
-            // 进度条百分比
-            let percent = currentStep >= 0 ? (currentStep / 2) * 100 : 0;
-            html += '<div style="position:absolute; top:24px; left:0; height:3px; background:#e2e8f0; width:100%; border-radius:2px;">';
-            html += '<div style="width:' + percent + '%; height:100%; background:#10b981; border-radius:2px; transition:width 0.3s;"></div>';
-            html += '</div>';
-            
-            for (let i = 0; i < steps.length; i++) {
-                const step = steps[i];
-                const hasDate = step.date && step.date !== "";
-                const isCompleted = i <= currentStep;
-                const isActive = i === currentStep;
-                
-                let iconClass = 'step-icon';
-                if (isCompleted && hasDate) iconClass += ' completed';
-                if (isActive) iconClass += ' active';
-                
-                let labelClass = 'step-label';
-                if (isActive) labelClass += ' active';
-                if (isCompleted && hasDate) labelClass += ' completed';
-                
-                html += '<div class="timeline-step">';
-                html += '<div class="' + iconClass + '">' + step.icon + '</div>';
-                html += '<div class="' + labelClass + '">' + step.label + '</div>';
-                html += '<div class="step-date">' + (step.date || '未定') + '</div>';
-                html += '</div>';
-            }
-            
-            html += '</div>';
-            
-            // 显示天数统计
-            if (shootingDays || waitingDays) {
-                html += '<div class="duration-info">';
-                if (shootingDays) {
-                    html += '<div class="duration-item"><span class="label">🎬 拍摄周期</span><span class="days">' + shootingDays + ' 天</span></div>';
-                }
-                if (waitingDays) {
-                    html += '<div class="duration-item"><span class="label">⏳ 后期到播出</span><span class="days">' + waitingDays + ' 天</span></div>';
-                }
-                html += '</div>';
-            }
-            
-            html += '</div>';
-            return html;
-        }
-
         function renderProjectsTable() {
             let filtered = []; 
             for (let i = 0; i < projects.length; i++) { 
@@ -1334,17 +1149,33 @@
             let posterUrl = getPosterUrl(p.poster); 
             let posterHtml = posterUrl ? "<img class='poster-image' src='" + h(posterUrl) + "' onerror=\"this.onerror=null; this.parentElement.innerHTML='<div class=\\'poster-placeholder\\'>图片加载失败</div>';\">" : "<div class='poster-placeholder'>暂无海报</div>";
             
-            // 生成时间线
-            let timelineHtml = generateTimeline(p);
+            // 计算天数信息
+            let shootingDaysInfo = '';
+            let productionDaysInfo = '';
+            
+            if (p.start_date && p.end_date) {
+                const shootingDays = calculateDaysBetween(p.start_date, p.end_date);
+                if (shootingDays !== null) {
+                    shootingDaysInfo = `【拍摄${shootingDays}天】`;
+                }
+            }
+            
+            if (p.end_date && p.air_date) {
+                const productionDays = calculateDaysBetween(p.end_date, p.air_date);
+                if (productionDays !== null) {
+                    productionDaysInfo = `【制作${productionDays}天】`;
+                }
+            }
+            
+            let dateInfo = '';
+            if (shootingDaysInfo || productionDaysInfo) {
+                dateInfo = ` ${shootingDaysInfo}${productionDaysInfo ? ' ' + productionDaysInfo : ''}`;
+            }
             
             let detail = '<div class="poster-container">' + posterHtml + '<div class="poster-info">'; 
             detail += '<div style="margin-bottom:8px;"><span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span> <span class="status-badge ' + getStatusClass(getStatus(p)) + '">' + getStatus(p) + '</span></div>'; 
             detail += '<h3>' + h(p.name) + '</h3></div></div>'; 
-            
-            // 添加时间线
-            detail += timelineHtml;
-            
-            detail += '<div class="detail-block"><strong>类型/集数</strong> ' + h(p.type || "-") + ' / ' + (p.episodes || "-") + '<br><strong>开机/杀青/播出</strong> ' + (p.start_date || "-") + ' / ' + (p.end_date || "-") + ' / ' + (p.air_date || "-") + '</div>'; 
+            detail += '<div class="detail-block"><strong>类型/集数</strong> ' + h(p.type || "-") + ' / ' + (p.episodes || "-") + '<br><strong>开机/杀青/播出</strong> ' + (p.start_date || "-") + ' / ' + (p.end_date || "-") + ' / ' + (p.air_date || "-") + '<span style="color:#64748b; font-size:11px; margin-left:8px;">' + dateInfo + '</span></div>'; 
             detail += '<div class="detail-block"><strong>网播平台</strong> ' + h(p.online_platform || "-") + '<br><strong>台播平台</strong> ' + h(p.tv_platform || "-") + '</div>'; 
             detail += '<div class="detail-block"><strong>导演/编剧</strong> ' + h(p.director || "-") + ' / ' + h(p.writer || "-") + '<br><strong>主演</strong> ' + (actors || "-") + '</div>'; 
             detail += '<div class="detail-block"><strong>出品/制作</strong> ' + h(p.studio || "-") + '<br><strong>总制片人</strong> ' + (p.producer || "-") + '<br><strong>制片人</strong> ' + (p.co_producer || "-") + '</div>'; 
@@ -1686,7 +1517,7 @@
             } 
             let tbody = document.getElementById("peopleTableBody"); 
             if (filtered.length === 0) { 
-                tbody.innerHTML = '<td><td colspan="4" class="loading">暂无影人数据</td></tr>'; 
+                tbody.innerHTML = '<tr><td colspan="4" class="loading">暂无影人数据</td></tr>'; 
                 return; 
             } 
             let html = ""; 
