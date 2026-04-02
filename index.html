@@ -1150,8 +1150,8 @@ function showProjectDetail(p) {
     let posterHtml = posterUrl ? "<img class='poster-image' src='" + h(posterUrl) + "' onerror=\"this.onerror=null; this.parentElement.innerHTML='<div class=\\'poster-placeholder\\'>图片加载失败</div>';\">" : "<div class='poster-placeholder'>暂无海报</div>";
     
     // 计算天数信息（含集均效率）
-    let shootingDaysInfo = '';
-    let productionDaysInfo = '';
+    let shootingLine = '';
+    let productionLine = '';
     
     if (p.start_date && p.end_date) {
         const shootingDays = calculateDaysBetween(p.start_date, p.end_date);
@@ -1160,9 +1160,9 @@ function showProjectDetail(p) {
             if (episodes && !isNaN(episodes) && episodes > 0) {
                 const efficiency = episodes / shootingDays;
                 const efficiencyRounded = Math.round(efficiency * 10) / 10;
-                shootingDaysInfo = `【拍摄${shootingDays}天，${efficiencyRounded}集/天】`;
+                shootingLine = `<div style="color:#64748b; font-size:11px; margin-top:4px;">拍摄周期：${shootingDays}天，平均 ${efficiencyRounded}集/天</div>`;
             } else {
-                shootingDaysInfo = `【拍摄${shootingDays}天】`;
+                shootingLine = `<div style="color:#64748b; font-size:11px; margin-top:4px;">拍摄周期：${shootingDays}天</div>`;
             }
         }
     }
@@ -1174,22 +1174,22 @@ function showProjectDetail(p) {
             if (episodes && !isNaN(episodes) && episodes > 0) {
                 const efficiency = episodes / productionDays;
                 const efficiencyRounded = Math.round(efficiency * 10) / 10;
-                productionDaysInfo = `【制作${productionDays}天，${efficiencyRounded}集/天】`;
+                productionLine = `<div style="color:#64748b; font-size:11px; margin-top:4px;">后期制作周期：${productionDays}天，平均 ${efficiencyRounded}集/天</div>`;
             } else {
-                productionDaysInfo = `【制作${productionDays}天】`;
+                productionLine = `<div style="color:#64748b; font-size:11px; margin-top:4px;">后期制作周期：${productionDays}天</div>`;
             }
         }
     }
     
-    let dateInfo = '';
-    if (shootingDaysInfo || productionDaysInfo) {
-        dateInfo = ` ${shootingDaysInfo}${productionDaysInfo ? ' ' + productionDaysInfo : ''}`;
+    let efficiencyHtml = '';
+    if (shootingLine || productionLine) {
+        efficiencyHtml = shootingLine + productionLine;
     }
     
     let detail = '<div class="poster-container">' + posterHtml + '<div class="poster-info">'; 
     detail += '<div style="margin-bottom:8px;"><span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span> <span class="status-badge ' + getStatusClass(getStatus(p)) + '">' + getStatus(p) + '</span></div>'; 
     detail += '<h3>' + h(p.name) + '</h3></div></div>'; 
-    detail += '<div class="detail-block"><strong>类型/集数</strong> ' + h(p.type || "-") + ' / ' + (p.episodes || "-") + '<br><strong>开机/杀青/播出</strong> ' + (p.start_date || "-") + ' / ' + (p.end_date || "-") + ' / ' + (p.air_date || "-") + '<span style="color:#64748b; font-size:11px; margin-left:8px;">' + dateInfo + '</span></div>'; 
+    detail += '<div class="detail-block"><strong>类型/集数</strong> ' + h(p.type || "-") + ' / ' + (p.episodes || "-") + '<br><strong>开机/杀青/播出</strong> ' + (p.start_date || "-") + ' / ' + (p.end_date || "-") + ' / ' + (p.air_date || "-") + efficiencyHtml + '</div>'; 
     detail += '<div class="detail-block"><strong>网播平台</strong> ' + h(p.online_platform || "-") + '<br><strong>台播平台</strong> ' + h(p.tv_platform || "-") + '</div>'; 
     detail += '<div class="detail-block"><strong>导演/编剧</strong> ' + h(p.director || "-") + ' / ' + h(p.writer || "-") + '<br><strong>主演</strong> ' + (actors || "-") + '</div>'; 
     detail += '<div class="detail-block"><strong>出品/制作</strong> ' + h(p.studio || "-") + '<br><strong>总制片人</strong> ' + (p.producer || "-") + '<br><strong>制片人</strong> ' + (p.co_producer || "-") + '</div>'; 
