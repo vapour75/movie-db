@@ -1144,52 +1144,66 @@
             }
         }
 
-        function showProjectDetail(p) {
-            let actors = [p.male1, p.female1, p.male2, p.female2].filter(function (x) { return x && x !== ""; }).join(" / "); 
-            let posterUrl = getPosterUrl(p.poster); 
-            let posterHtml = posterUrl ? "<img class='poster-image' src='" + h(posterUrl) + "' onerror=\"this.onerror=null; this.parentElement.innerHTML='<div class=\\'poster-placeholder\\'>图片加载失败</div>';\">" : "<div class='poster-placeholder'>暂无海报</div>";
-            
-            // 计算天数信息
-            let shootingDaysInfo = '';
-            let productionDaysInfo = '';
-            
-            if (p.start_date && p.end_date) {
-                const shootingDays = calculateDaysBetween(p.start_date, p.end_date);
-                if (shootingDays !== null) {
-                    shootingDaysInfo = `【拍摄${shootingDays}天】`;
-                }
+function showProjectDetail(p) {
+    let actors = [p.male1, p.female1, p.male2, p.female2].filter(function (x) { return x && x !== ""; }).join(" / "); 
+    let posterUrl = getPosterUrl(p.poster); 
+    let posterHtml = posterUrl ? "<img class='poster-image' src='" + h(posterUrl) + "' onerror=\"this.onerror=null; this.parentElement.innerHTML='<div class=\\'poster-placeholder\\'>图片加载失败</div>';\">" : "<div class='poster-placeholder'>暂无海报</div>";
+    
+    // 计算天数信息（含集均效率）
+    let shootingDaysInfo = '';
+    let productionDaysInfo = '';
+    
+    if (p.start_date && p.end_date) {
+        const shootingDays = calculateDaysBetween(p.start_date, p.end_date);
+        if (shootingDays !== null && shootingDays > 0) {
+            const episodes = parseFloat(p.episodes);
+            if (episodes && !isNaN(episodes) && episodes > 0) {
+                const efficiency = episodes / shootingDays;
+                const efficiencyRounded = Math.round(efficiency * 10) / 10;
+                shootingDaysInfo = `【拍摄${shootingDays}天，${efficiencyRounded}集/天】`;
+            } else {
+                shootingDaysInfo = `【拍摄${shootingDays}天】`;
             }
-            
-            if (p.end_date && p.air_date) {
-                const productionDays = calculateDaysBetween(p.end_date, p.air_date);
-                if (productionDays !== null) {
-                    productionDaysInfo = `【制作${productionDays}天】`;
-                }
-            }
-            
-            let dateInfo = '';
-            if (shootingDaysInfo || productionDaysInfo) {
-                dateInfo = ` ${shootingDaysInfo}${productionDaysInfo ? ' ' + productionDaysInfo : ''}`;
-            }
-            
-            let detail = '<div class="poster-container">' + posterHtml + '<div class="poster-info">'; 
-            detail += '<div style="margin-bottom:8px;"><span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span> <span class="status-badge ' + getStatusClass(getStatus(p)) + '">' + getStatus(p) + '</span></div>'; 
-            detail += '<h3>' + h(p.name) + '</h3></div></div>'; 
-            detail += '<div class="detail-block"><strong>类型/集数</strong> ' + h(p.type || "-") + ' / ' + (p.episodes || "-") + '<br><strong>开机/杀青/播出</strong> ' + (p.start_date || "-") + ' / ' + (p.end_date || "-") + ' / ' + (p.air_date || "-") + '<span style="color:#64748b; font-size:11px; margin-left:8px;">' + dateInfo + '</span></div>'; 
-            detail += '<div class="detail-block"><strong>网播平台</strong> ' + h(p.online_platform || "-") + '<br><strong>台播平台</strong> ' + h(p.tv_platform || "-") + '</div>'; 
-            detail += '<div class="detail-block"><strong>导演/编剧</strong> ' + h(p.director || "-") + ' / ' + h(p.writer || "-") + '<br><strong>主演</strong> ' + (actors || "-") + '</div>'; 
-            detail += '<div class="detail-block"><strong>出品/制作</strong> ' + h(p.studio || "-") + '<br><strong>总制片人</strong> ' + (p.producer || "-") + '<br><strong>制片人</strong> ' + (p.co_producer || "-") + '</div>'; 
-            detail += '<div class="detail-block"><strong>豆瓣评分</strong> ' + (p.rating || "-") + ' (' + formatCount(p.rating_count) + ')<br><strong>原著</strong> ' + h(p.original || "-") + '</div>'; 
-            document.getElementById("detailContent").innerHTML = detail; 
-            document.getElementById("editDetailBtn").onclick = function () { 
-                closeDetail(); 
-                openEdit(p.id); 
-            }; 
-            document.getElementById("deleteDetailBtn").onclick = function () { 
-                if (confirm("删除《" + p.name + "》？")) deleteProject(p.id); 
-            }; 
-            document.getElementById("detailModal").classList.add("active");
         }
+    }
+    
+    if (p.end_date && p.air_date) {
+        const productionDays = calculateDaysBetween(p.end_date, p.air_date);
+        if (productionDays !== null && productionDays > 0) {
+            const episodes = parseFloat(p.episodes);
+            if (episodes && !isNaN(episodes) && episodes > 0) {
+                const efficiency = episodes / productionDays;
+                const efficiencyRounded = Math.round(efficiency * 10) / 10;
+                productionDaysInfo = `【制作${productionDays}天，${efficiencyRounded}集/天】`;
+            } else {
+                productionDaysInfo = `【制作${productionDays}天】`;
+            }
+        }
+    }
+    
+    let dateInfo = '';
+    if (shootingDaysInfo || productionDaysInfo) {
+        dateInfo = ` ${shootingDaysInfo}${productionDaysInfo ? ' ' + productionDaysInfo : ''}`;
+    }
+    
+    let detail = '<div class="poster-container">' + posterHtml + '<div class="poster-info">'; 
+    detail += '<div style="margin-bottom:8px;"><span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span> <span class="status-badge ' + getStatusClass(getStatus(p)) + '">' + getStatus(p) + '</span></div>'; 
+    detail += '<h3>' + h(p.name) + '</h3></div></div>'; 
+    detail += '<div class="detail-block"><strong>类型/集数</strong> ' + h(p.type || "-") + ' / ' + (p.episodes || "-") + '<br><strong>开机/杀青/播出</strong> ' + (p.start_date || "-") + ' / ' + (p.end_date || "-") + ' / ' + (p.air_date || "-") + '<span style="color:#64748b; font-size:11px; margin-left:8px;">' + dateInfo + '</span></div>'; 
+    detail += '<div class="detail-block"><strong>网播平台</strong> ' + h(p.online_platform || "-") + '<br><strong>台播平台</strong> ' + h(p.tv_platform || "-") + '</div>'; 
+    detail += '<div class="detail-block"><strong>导演/编剧</strong> ' + h(p.director || "-") + ' / ' + h(p.writer || "-") + '<br><strong>主演</strong> ' + (actors || "-") + '</div>'; 
+    detail += '<div class="detail-block"><strong>出品/制作</strong> ' + h(p.studio || "-") + '<br><strong>总制片人</strong> ' + (p.producer || "-") + '<br><strong>制片人</strong> ' + (p.co_producer || "-") + '</div>'; 
+    detail += '<div class="detail-block"><strong>豆瓣评分</strong> ' + (p.rating || "-") + ' (' + formatCount(p.rating_count) + ')<br><strong>原著</strong> ' + h(p.original || "-") + '</div>'; 
+    document.getElementById("detailContent").innerHTML = detail; 
+    document.getElementById("editDetailBtn").onclick = function () { 
+        closeDetail(); 
+        openEdit(p.id); 
+    }; 
+    document.getElementById("deleteDetailBtn").onclick = function () { 
+        if (confirm("删除《" + p.name + "》？")) deleteProject(p.id); 
+    }; 
+    document.getElementById("detailModal").classList.add("active");
+}
 
         function closeDetail() { 
             document.getElementById("detailModal").classList.remove("active"); 
