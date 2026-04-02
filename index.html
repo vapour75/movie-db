@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>影视项目数据库</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -468,6 +468,58 @@
         textarea {
             resize: vertical;
         }
+
+        /* 图片上传样式 */
+        .upload-container {
+            margin: 16px 0;
+        }
+
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8fafc;
+        }
+
+        .upload-area:hover {
+            border-color: #1e293b;
+            background: #f1f5f9;
+        }
+
+        .preview-item {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+
+        .preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .preview-item .remove-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 
@@ -715,6 +767,7 @@
         let currentPersonId = null;
         let filters = { level: "all", type: "all", platform: "all", status: "all" };
         let currentTab = "projects";
+        let currentUploadFiles = [];  // 新增：存储当前上传的文件
 
         function showActionMenu(x, y, target) {
             currentActionTarget = target;
@@ -758,49 +811,6 @@
             return CLOUDINARY_BASE_URL + poster; 
         }
 
-        async function handleImageUpload(file) {
-    const options = {
-        maxSizeMB: 0.5,
-        maxWidthOrHeight: 800,
-        useWebWorker: true
-    };
-    
-    try {
-        let compressedFile = file;
-        if (file.size > 500 * 1024) {
-            compressedFile = await imageCompression(file, options);
-        }
-        
-        const formData = new FormData();
-        formData.append('file', compressedFile);
-        formData.append('upload_preset', 'my_movie_upload');  // ← 检查这里
-        formData.append('cloud_name', CLOUDINARY_CLOUD_NAME);
-        
-        const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
-            method: 'POST',
-            body: formData
-        });
-        
-        const data = await response.json();
-        
-        if (data.public_id) {
-            currentUploadFiles.push(data.public_id);
-            addImagePreview(data.public_id, data.secure_url);
-            
-            const posterInput = document.getElementById('projPoster');
-            const existingPosters = posterInput.value ? posterInput.value.split(',') : [];
-            existingPosters.push(data.public_id);
-            posterInput.value = existingPosters.join(',');
-            
-            // 可选：显示成功提示
-            console.log('上传成功:', data.secure_url);
-        }
-    } catch (error) {
-        console.error('上传失败:', error);
-        alert('图片上传失败，请重试');
-    }
-}
-        
         function getVoteWeight(count) {
             if (!count) return 1.0; 
             let num = parseFloat(count); 
@@ -1182,6 +1192,21 @@
                     document.getElementById("projRatingCount").value = p.rating_count || ""; 
                     document.getElementById("projPoster").value = p.poster || ""; 
                     document.getElementById("projOriginal").value = p.original || ""; 
+                    
+                    // 加载现有海报预览
+                    if (p.poster) {
+                        currentUploadFiles = p.poster.split(',').filter(f => f.trim());
+                        setTimeout(() => {
+                            const previewContainer = document.getElementById('imagePreview');
+                            if (previewContainer) {
+                                previewContainer.innerHTML = '';
+                                currentUploadFiles.forEach(posterId => {
+                                    const url = getPosterUrl(posterId);
+                                    if (url) addImagePreview(posterId, url);
+                                });
+                            }
+                        }, 100);
+                    }
                 }
             } else {
                 document.getElementById("projName").value = ""; 
@@ -1206,13 +1231,22 @@
                 document.getElementById("projRatingCount").value = ""; 
                 document.getElementById("projPoster").value = ""; 
                 document.getElementById("projOriginal").value = "";
+                currentUploadFiles = [];
+                const previewContainer = document.getElementById('imagePreview');
+                if (previewContainer) previewContainer.innerHTML = '';
             } 
             document.getElementById("editModal").classList.add("active");
+            
+            // 添加上传区域
+            if (!document.getElementById('uploadArea')) {
+                addImageUploadToModal();
+            }
         }
 
         function closeEdit() { 
             document.getElementById("editModal").classList.remove("active"); 
             currentId = null; 
+            currentUploadFiles = [];
         }
 
         async function saveProject() {
@@ -1573,21 +1607,21 @@
                 worksHtml += '</ul></div>';
             } 
             let photoHtml = '';
-if (person.photo && person.photo.trim() !== "" && person.photo !== "null" && person.photo !== "undefined") {
-    let photoUrl = person.photo.trim();
-    if (!photoUrl.startsWith('http://') && !photoUrl.startsWith('https://')) {
-        photoUrl = CLOUDINARY_BASE_URL + photoUrl;
-    }
-    photoHtml = '<div style="width:120px; height:160px; position:relative; background:#f1f5f9; border-radius:12px; display:flex; align-items:center; justify-content:center;">' +
-        '<span style="position:absolute; color:#94a3b8;">📷</span>' +
-        '<img class="poster-image" src="' + h(photoUrl) + '" ' +
-        'style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1);" ' +
-        'onload="this.style.position=\'relative\'; this.previousElementSibling.style.display=\'none\';" ' +
-        'onerror="this.style.display=\'none\';">' +
-        '</div>';
-} else {
-    photoHtml = '<div class="poster-placeholder" style="width:120px; height:160px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; border-radius:12px;">📷 暂无照片</div>';
-}
+            if (person.photo && person.photo.trim() !== "" && person.photo !== "null" && person.photo !== "undefined") {
+                let photoUrl = person.photo.trim();
+                if (!photoUrl.startsWith('http://') && !photoUrl.startsWith('https://')) {
+                    photoUrl = CLOUDINARY_BASE_URL + photoUrl;
+                }
+                photoHtml = '<div style="width:120px; height:160px; position:relative; background:#f1f5f9; border-radius:12px; display:flex; align-items:center; justify-content:center;">' +
+                    '<span style="position:absolute; color:#94a3b8;">📷</span>' +
+                    '<img class="poster-image" src="' + h(photoUrl) + '" ' +
+                    'style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1);" ' +
+                    'onload="this.style.position=\'relative\'; this.previousElementSibling.style.display=\'none\';" ' +
+                    'onerror="this.style.display=\'none\';">' +
+                    '</div>';
+            } else {
+                photoHtml = '<div class="poster-placeholder" style="width:120px; height:160px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; border-radius:12px;">📷 暂无照片</div>';
+            }
             let awardsHtml = person.awards ? '<div class="detail-block"><strong>🎖️ 主要获奖</strong><div style="margin-top:8px;">' + h(person.awards).replace(/\n/g, '<br>') + '</div></div>' : '<div class="detail-block"><strong>🎖️ 主要获奖</strong><div style="margin-top:8px;">暂无获奖信息</div></div>'; 
             let otherInfoHtml = person.other_info ? '<div class="detail-block"><strong>ℹ️ 其他信息</strong><div style="margin-top:8px;">' + h(person.other_info).replace(/\n/g, '<br>') + '</div></div>' : '<div class="detail-block"><strong>ℹ️ 其他信息</strong><div style="margin-top:8px;">暂无其他信息</div></div>'; 
             let detailHtml = '<div style="display:flex; gap:20px; margin-bottom:16px;">' + photoHtml + '<div style="flex:1;"><div style="margin-bottom:12px;"><div style="font-size:12px; color:#64748b;">综合得分</div><div style="font-size:28px; font-weight:bold; color:#f59e0b;">' + person.totalScore.toFixed(2) + '</div></div><div><div style="font-size:12px; color:#64748b;">参与作品数</div><div style="font-size:24px; font-weight:bold;">' + person.worksCount + '</div></div>';
@@ -1692,6 +1726,132 @@ if (person.photo && person.photo.trim() !== "" && person.photo !== "null" && per
             otherInput.oninput = updateSelectedDisplay; 
             updateSelectedDisplay(); 
         }
+
+        // ========== 新增：图片上传相关函数 ==========
+        
+        function addImagePreview(publicId, url) {
+            const previewContainer = document.getElementById('imagePreview');
+            if (!previewContainer) return;
+            
+            // 检查是否已存在相同图片
+            if (previewContainer.querySelector(`[data-id="${publicId}"]`)) return;
+            
+            const previewDiv = document.createElement('div');
+            previewDiv.className = 'preview-item';
+            previewDiv.setAttribute('data-id', publicId);
+            previewDiv.innerHTML = `
+                <img src="${url}" style="width:100%; height:100%; object-fit:cover;">
+                <button class="remove-btn" data-id="${publicId}" style="position:absolute; top:2px; right:2px; background:rgba(0,0,0,0.6); color:white; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center;">×</button>
+            `;
+            
+            previewDiv.querySelector('.remove-btn').onclick = (e) => {
+                e.stopPropagation();
+                previewDiv.remove();
+                const index = currentUploadFiles.indexOf(publicId);
+                if (index > -1) currentUploadFiles.splice(index, 1);
+                
+                const posterInput = document.getElementById('projPoster');
+                const posters = posterInput.value.split(',').filter(p => p.trim() !== publicId);
+                posterInput.value = posters.join(',');
+            };
+            
+            previewContainer.appendChild(previewDiv);
+        }
+
+        function addImageUploadToModal() {
+            if (document.getElementById('uploadArea')) return;
+            
+            const originalField = document.getElementById('projOriginal');
+            if (!originalField) return;
+            
+            const parentDiv = originalField.parentElement;
+            
+            const uploadHtml = `
+                <div class="upload-container">
+                    <div id="uploadArea" class="upload-area">
+                        <div style="font-size:32px; margin-bottom:8px;">📷</div>
+                        <div style="font-size:12px; color:#64748b;">点击或拖拽上传图片（支持手机相册）</div>
+                        <input type="file" id="imageUpload" accept="image/*" multiple style="display:none;">
+                    </div>
+                    <div id="imagePreview" style="margin-top:16px; display:flex; gap:12px; flex-wrap:wrap;"></div>
+                </div>
+            `;
+            
+            originalField.insertAdjacentHTML('afterend', uploadHtml);
+            
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('imageUpload');
+            
+            if (uploadArea && fileInput) {
+                uploadArea.onclick = () => fileInput.click();
+                
+                fileInput.onchange = async (e) => {
+                    const files = Array.from(e.target.files);
+                    for (const file of files) {
+                        await handleImageUpload(file);
+                    }
+                    fileInput.value = '';
+                };
+                
+                uploadArea.ondragover = (e) => {
+                    e.preventDefault();
+                    uploadArea.style.borderColor = '#1e293b';
+                    uploadArea.style.background = '#f1f5f9';
+                };
+                
+                uploadArea.ondragleave = () => {
+                    uploadArea.style.borderColor = '#cbd5e1';
+                    uploadArea.style.background = '#f8fafc';
+                };
+                
+                uploadArea.ondrop = async (e) => {
+                    e.preventDefault();
+                    uploadArea.style.borderColor = '#cbd5e1';
+                    uploadArea.style.background = '#f8fafc';
+                    const files = Array.from(e.dataTransfer.files);
+                    for (const file of files) {
+                        if (file.type.startsWith('image/')) {
+                            await handleImageUpload(file);
+                        }
+                    }
+                };
+            }
+        }
+
+        async function handleImageUpload(file) {
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('upload_preset', 'my_movie_upload');
+                formData.append('cloud_name', CLOUDINARY_CLOUD_NAME);
+                
+                const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.public_id) {
+                    currentUploadFiles.push(data.public_id);
+                    addImagePreview(data.public_id, data.secure_url);
+                    
+                    const posterInput = document.getElementById('projPoster');
+                    const existingPosters = posterInput.value ? posterInput.value.split(',').filter(p => p.trim()) : [];
+                    if (!existingPosters.includes(data.public_id)) {
+                        existingPosters.push(data.public_id);
+                        posterInput.value = existingPosters.join(',');
+                    }
+                    
+                    console.log('上传成功:', data.secure_url);
+                }
+            } catch (error) {
+                console.error('上传失败:', error);
+                alert('图片上传失败，请重试');
+            }
+        }
+
+        // ========== 原有函数继续 ==========
 
         function bindEvents() {
             document.getElementById("addBtn").onclick = function () { 
