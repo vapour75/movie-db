@@ -212,7 +212,7 @@
 
         .rating-high { background: #dcfce7; color: #166534; }
         .score-badge { font-weight: bold; color: #f59e0b; font-size: 16px; }
-        .contribution-badge { font-weight: bold; color: #10b981; font-size: 14px; }
+        .contribution-badge { font-weight: bold; color: #f97316; font-size: 14px; }
 
         .fab {
             position: fixed;
@@ -382,17 +382,17 @@
             font-size: 11px;
         }
 
-        /* 获奖标签 */
+        /* 获奖标签 - 缩小一半 */
         .award-tag {
             display: inline-block;
-            width: 24px;
-            height: 24px;
-            line-height: 24px;
+            width: 18px;
+            height: 18px;
+            line-height: 18px;
             text-align: center;
             border-radius: 50%;
-            font-size: 12px;
+            font-size: 10px;
             font-weight: bold;
-            margin: 2px;
+            margin: 1px;
         }
         .award-tag-five { background: #dcfce7; color: #166534; }
         .award-tag-bai { background: #e0e7ff; color: #3730a3; }
@@ -460,6 +460,18 @@
         }
         .action-menu button:hover { background: #f1f5f9; }
         .menu-delete { color: #ef4444; }
+        
+        /* 贡献分橙色 */
+        .contribution-detail {
+            font-size: 13px;
+            font-weight: bold;
+            color: #f97316;
+        }
+        .score-breakdown {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 4px;
+        }
     </style>
 </head>
 
@@ -479,11 +491,13 @@
             <div class="filter-group"><label>状态</label><select id="statusFilter"><option value="all">全部</option><option value="已播出">已播出</option><option value="已杀青">已杀青</option><option value="已开机">已开机</option></select></div> 
             <button class="reset-btn" id="resetFilters">重置</button>
         </div>
-        <div class="table-wrapper"><table class="project-table"><thead><tr><th>剧目名称</th><th>贡献分</th><th>级别</th><th>获奖</th><th>类型</th><th>集数</th><th>开机</th><th>杀青</th><th>播出日期</th><th>网播平台</th><th>台播平台</th><th>导演</th><th>编剧</th><th>男主</th><th>女主</th><th>男二</th><th>女二</th><th>出品/制作</th><th>云合最高市占率</th><th>豆瓣评分</th><th>评分人次</th><th>状态</th></tr></thead><tbody id="tableBody"></tbody></table></div>
+        <div class="table-wrapper"><table class="project-table"><thead>工作时
+<th>剧目名称</th><th>贡献分</th><th>级别</th><th>类型</th><th>集数</th><th>开机</th><th>杀青</th><th>播出日期</th><th>网播平台</th><th>台播平台</th><th>导演</th><th>编剧</th><th>男主</th><th>女主</th><th>男二</th><th>女二</th><th>出品/制作</th><th>云合最高市占率</th><th>豆瓣评分</th><th>评分人次</th><th>获奖</th><th>状态</th>
+</thead><tbody id="tableBody"></tbody></table</div>
     </div>
     <div id="peopleView" style="display:none;">
         <div style="margin-bottom:16px;"><h2 style="font-size:18px; margin-bottom:12px;">影人排行榜</h2><div class="people-filters"><div class="filter-group"><label>职业</label><select id="peopleRoleFilter"><option value="all">全部职业</option><option value="导演">导演</option><option value="编剧">编剧</option><option value="演员">演员</option></select></div></div></div>
-        <div class="table-wrapper"><table class="people-table"><thead><tr><th>姓名</th><th>职业</th><th>综合得分</th><th>代表作数量</th></tr></thead><tbody id="peopleTableBody"></tbody></table></div>
+        <div class="table-wrapper"><table class="people-table"><thead><tr><th>姓名</th><th>职业</th><th>综合得分</th><th>代表作数量</th></tr></thead><tbody id="peopleTableBody"></tbody></table</div>
     </div>
     <footer>点击行查看详情 · 长按行可编辑/删除 · 右下角+号添加项目</footer>
 </div>
@@ -632,16 +646,25 @@
     function getLevelWeight(level) { if(level==='S') return 1.3; if(level==='A+') return 1.15; if(level==='A') return 1.0; return 0.85; }
     function getProgressBonus(status) { return (status==='已杀青'||status==='已开机')?0.2:0; }
     
-    // 计算获奖加成
+    // 计算获奖分（核心奖参与衰减，辅助奖直接累加）
     function calculateAwardBonus(awards) {
         if (!awards || awards.length === 0) return 0;
-        let totalCoefficient = 0;
-        for (let i = 0; i < awards.length; i++) {
-            totalCoefficient += AWARD_COEFFICIENTS[awards[i]] || 0;
-        }
-        const n = awards.length;
-        const attenuation = 1 / (1 + Math.log10(n));
-        return totalCoefficient * attenuation;
+        // 核心奖列表（系数>=0.20）
+        const coreAwards = awards.filter(a => AWARD_COEFFICIENTS[a] >= 0.20);
+        const auxAwards = awards.filter(a => AWARD_COEFFICIENTS[a] < 0.20);
+        
+        // 核心奖衰减
+        let coreSum = 0;
+        for (let a of coreAwards) coreSum += AWARD_COEFFICIENTS[a] || 0;
+        const n = coreAwards.length;
+        const attenuation = n > 0 ? 1 / (1 + Math.log10(n)) : 1;
+        const coreBonus = coreSum * attenuation;
+        
+        // 辅助奖直接累加
+        let auxBonus = 0;
+        for (let a of auxAwards) auxBonus += AWARD_COEFFICIENTS[a] || 0;
+        
+        return coreBonus + auxBonus;
     }
     
     function getProjectAwardsList(project) {
@@ -654,7 +677,7 @@
         }
     }
     
-    // 获取获奖标签HTML
+    // 获取获奖标签HTML（缩小版）
     function getAwardTagsHtml(project) {
         let awards = getProjectAwardsList(project);
         if (awards.length === 0) return "-";
@@ -674,23 +697,38 @@
         return tags.join('');
     }
     
-    // 计算贡献分（核心函数）
-    function getContributionScore(p) {
+    // 计算贡献分（核心函数 - 加法方案）
+    function getContributionScore(p, returnBreakdown = false) {
         let status = getStatus(p);
-        let baseScore = 0;
+        let doubanScore = 0;
+        let yunheScore = 0;
+        let awardScore = 0;
+        
         if (status === "已播出") {
             let rating = parseFloat(p.rating);
-            if (isNaN(rating)) return 0;
-            let ratingFinal = rating * getVoteWeight(p.rating_count) * getQualityWeightOnly(rating);
-            let shareScore = getYunheStandardizedScore(p.yunhe_peak_share);
-            baseScore = ratingFinal * 0.45 + shareScore * 0.55;
+            if (isNaN(rating)) {
+                if (returnBreakdown) return { total: 0, douban: 0, yunhe: 0, award: 0 };
+                return 0;
+            }
+            let doubanRaw = rating * getVoteWeight(p.rating_count) * getQualityWeightOnly(rating);
+            let yunheRaw = getYunheStandardizedScore(p.yunhe_peak_share);
+            doubanScore = doubanRaw * 0.375;
+            yunheScore = yunheRaw * 0.475;
+            awardScore = calculateAwardBonus(getProjectAwardsList(p)) * 0.15;
         } else {
             let levelWeight = getLevelWeight(p.level);
             let progressBonus = getProgressBonus(status);
-            baseScore = levelWeight * (1 + progressBonus);
+            let baseScore = levelWeight * (1 + progressBonus);
+            // 未播出项目无豆瓣云合，只有基础分
+            if (returnBreakdown) return { total: baseScore, douban: 0, yunhe: 0, award: 0 };
+            return baseScore;
         }
-        let awardBonus = calculateAwardBonus(getProjectAwardsList(p));
-        return baseScore * (1 + awardBonus);
+        
+        let total = doubanScore + yunheScore + awardScore;
+        if (returnBreakdown) {
+            return { total, douban: doubanScore, yunhe: yunheScore, award: awardScore };
+        }
+        return total;
     }
     
     function getRoleWeight(role, personName, project) {
@@ -794,7 +832,6 @@
             html += '<td style="font-weight:500;">' + h(p.name) + '</td>';
             html += '<td><span class="contribution-badge">' + contribution.toFixed(2) + '</span></td>';
             html += '<td><span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span></td>';
-            html += '<td>' + awardTags + '</td>';
             html += '<td>' + h(p.type || "-") + '</td>'; 
             html += '<td>' + h(p.episodes || "-") + '</td>'; 
             html += '<td>' + (p.start_date || "-") + '</td>'; 
@@ -812,6 +849,7 @@
             html += '<td>' + yunheDisplay + '</td>';
             html += '<td>' + ratingDisplay + '</td>'; 
             html += '<td>' + formatCount(p.rating_count) + '</td>'; 
+            html += '<td>' + awardTags + '</td>';
             html += '<td><span class="status-badge ' + getStatusClass(status) + '">' + status + '</span></td>'; 
             html += '</tr>';
         } 
@@ -829,7 +867,8 @@
         let actors = [p.male1, p.female1, p.male2, p.female2].filter(x=>x&&x!=="").join(" / "); 
         let posterUrl = getPosterUrl(p.poster); 
         let posterHtml = posterUrl ? "<img class='poster-image' src='" + h(posterUrl) + "' onerror=\"this.onerror=null; this.parentElement.innerHTML='<div class=\\'poster-placeholder\\'>图片加载失败</div>';\">" : "<div class='poster-placeholder'>暂无海报</div>";
-        let contribution = getContributionScore(p);
+        let contributionBreakdown = getContributionScore(p, true);
+        let contribution = contributionBreakdown.total;
         let awardsList = getProjectAwardsList(p);
         let awardsText = awardsList.length ? awardsList.map(a=>AWARD_NAMES[a]||a).join("、") : "无";
         
@@ -858,12 +897,21 @@
         let detail = '<div class="poster-container">' + posterHtml + '<div class="poster-info">'; 
         detail += '<div style="margin-bottom:8px;"><span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span> <span class="status-badge ' + getStatusClass(getStatus(p)) + '">' + getStatus(p) + '</span></div>'; 
         detail += '<h3>' + h(p.name) + '</h3></div></div>'; 
-        detail += '<div class="detail-block"><strong>🎯 贡献分</strong> <span class="contribution-badge" style="font-size:20px;">' + contribution.toFixed(2) + '</span><br><strong>🏆 获奖</strong> ' + awardsText + '</div>';
+        
+        // 贡献分显示（橙色，带构成说明）
+        let breakdownHtml = '';
+        if (getStatus(p) === "已播出") {
+            breakdownHtml = `<div class="score-breakdown">豆瓣加权 ${contributionBreakdown.douban.toFixed(2)} + 云合加权 ${contributionBreakdown.yunhe.toFixed(2)} + 获奖加权 ${contributionBreakdown.award.toFixed(2)}</div>`;
+        }
+        detail += '<div class="detail-block"><strong>🎯 贡献分</strong> <span class="contribution-detail" style="font-size:20px;">' + contribution.toFixed(2) + '</span>' + breakdownHtml + '</div>';
+        
         detail += '<div class="detail-block"><strong>类型/集数</strong> ' + h(p.type || "-") + ' / ' + (p.episodes || "-") + '<br><strong>开机/杀青/播出</strong> ' + (p.start_date || "-") + ' / ' + (p.end_date || "-") + ' / ' + (p.air_date || "-") + shootingLine + productionLine + '</div>'; 
         detail += '<div class="detail-block"><strong>网播平台</strong> ' + h(p.online_platform || "-") + '<br><strong>台播平台</strong> ' + h(p.tv_platform || "-") + '</div>'; 
         detail += '<div class="detail-block"><strong>导演/编剧</strong> ' + h(p.director || "-") + ' / ' + h(p.writer || "-") + '<br><strong>主演</strong> ' + (actors || "-") + '</div>'; 
         detail += '<div class="detail-block"><strong>出品/制作</strong> ' + h(p.studio || "-") + '<br><strong>总制片人</strong> ' + (p.producer || "-") + '<br><strong>制片人</strong> ' + (p.co_producer || "-") + '</div>'; 
         detail += '<div class="detail-block"><strong>云合最高市占率</strong> ' + (p.yunhe_peak_share || "-") + '%<br><strong>豆瓣评分</strong> ' + (p.rating || "-") + ' (' + formatCount(p.rating_count) + ')<br><strong>原著</strong> ' + h(p.original || "-") + '</div>'; 
+        detail += '<div class="detail-block"><strong>🏆 获奖详情</strong><br>' + awardsText + '</div>';
+        
         document.getElementById("detailContent").innerHTML = detail; 
         document.getElementById("editDetailBtn").onclick = function(){ closeDetail(); openEdit(p.id); }; 
         document.getElementById("deleteDetailBtn").onclick = function(){ if(confirm("删除《"+p.name+"》？")) deleteProject(p.id); }; 
