@@ -1510,7 +1510,7 @@
                     let roleWeight = getRoleWeight(r.role_in_project, person.name, proj); 
                     let contribution = baseScore * roleWeight; 
                     totalScore += contribution; 
-                    let workInfo = { name: proj.name, role: r.role_in_project, contribution: contribution, status: getStatus(proj), rating: proj.rating, year: proj.air_date ? proj.air_date.substring(0, 4) : (proj.end_date ? proj.end_date.substring(0, 4) : (proj.start_date ? proj.start_date.substring(0, 4) : '')) }; 
+                   let workInfo = { name: proj.name, role: r.role_in_project, contribution: contribution, status: getStatus(proj), rating: proj.rating, yunhe_share: proj.yunhe_peak_share, year: ... };
                     if (proj.air_date && proj.rating) { 
                         works.push(workInfo); 
                     } else { 
@@ -1729,7 +1729,7 @@
                 worksHtml += '<div class="detail-block"><strong>🏆 已播出代表作</strong><ul style="margin-left:20px; margin-top:8px;">'; 
                 for (let i = 0; i < person.works.length; i++) { 
                     let w = person.works[i]; 
-                    worksHtml += '<li><strong>' + h(w.name) + '</strong>（' + w.role + '，豆瓣 ' + w.rating + '，贡献 ' + w.contribution.toFixed(2) + '分）' + (w.year ? ' · ' + w.year : '') + '</li>'; 
+                    worksHtml += '<li><strong>' + h(w.name) + '</strong>（' + w.role + '，豆瓣 ' + w.rating + '，云合 ' + (w.yunhe_share || '-') + '%，贡献 ' + w.contribution.toFixed(2) + '分）' + (w.year ? ' · ' + w.year : '') + '</li>';
                 } 
                 worksHtml += '</ul></div>'; 
             } 
