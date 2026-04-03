@@ -213,7 +213,6 @@
         .rating-high { background: #dcfce7; color: #166534; }
         .score-badge { font-weight: bold; color: #f59e0b; font-size: 16px; }
         
-        /* 贡献分蓝色 */
         .contribution-badge { 
             font-weight: bold; 
             color: #3ccef7; 
@@ -352,7 +351,6 @@
         .selected-platforms { margin-top: 8px; padding: 6px; background: #f1f5f9; border-radius: 8px; font-size: 11px; }
         .selected-platforms span { display: inline-block; background: white; padding: 2px 8px; border-radius: 12px; margin: 2px; }
 
-        /* 获奖选择框样式 */
         .award-check-group {
             display: flex;
             flex-direction: column;
@@ -398,7 +396,6 @@
             font-size: 11px;
         }
 
-        /* 获奖标签 - 缩小版 18x18 */
         .award-tag {
             display: inline-block;
             width: 18px;
@@ -495,13 +492,11 @@
             <div class="filter-group"><label>状态</label><select id="statusFilter"><option value="all">全部</option><option value="已播出">已播出</option><option value="已杀青">已杀青</option><option value="已开机">已开机</option></select></div> 
             <button class="reset-btn" id="resetFilters">重置</button>
         </div>
-        <div class="table-wrapper"><table class="project-table"><thead><tr>
-<th>剧目名称</th><th>贡献分</th><th>级别</th><th>类型</th><th>集数</th><th>开机</th><th>杀青</th><th>播出日期</th><th>网播平台</th><th>台播平台</th><th>导演</th><th>编剧</th><th>男主</th><th>女主</th><th>男二</th><th>女二</th><th>出品/制作</th><th>云合最高市占率</th><th>豆瓣评分</th><th>评分人次</th><th>获奖</th><th>状态</th>
-</thead><tbody id="tableBody"></tbody></table</div>
+        <div class="table-wrapper"><table class="project-table"><thead><tr><th>剧目名称</th><th>贡献分</th><th>级别</th><th>类型</th><th>集数</th><th>开机</th><th>杀青</th><th>播出日期</th><th>网播平台</th><th>台播平台</th><th>导演</th><th>编剧</th><th>男主</th><th>女主</th><th>男二</th><th>女二</th><th>出品/制作</th><th>云合最高市占率</th><th>豆瓣评分</th><th>评分人次</th><th>获奖</th><th>状态</th></tr></thead><tbody id="tableBody"></tbody></table></div>
     </div>
     <div id="peopleView" style="display:none;">
         <div style="margin-bottom:16px;"><h2 style="font-size:18px; margin-bottom:12px;">影人排行榜</h2><div class="people-filters"><div class="filter-group"><label>职业</label><select id="peopleRoleFilter"><option value="all">全部职业</option><option value="导演">导演</option><option value="编剧">编剧</option><option value="演员">演员</option></select></div></div></div>
-        <div class="table-wrapper"><table class="people-table"><thead><tr><th>姓名</th><th>职业</th><th>综合得分</th><th>代表作数量</th></tr></thead><tbody id="peopleTableBody"></tbody></table</div>
+        <div class="table-wrapper"><table class="people-table"><thead>汽<th>姓名</th><th>职业</th><th>综合得分</th><th>代表作数量</th></tr></thead><tbody id="peopleTableBody"></tbody></table></div>
     </div>
     <footer>点击行查看详情 · 长按行可编辑/删除 · 右下角+号添加项目</footer>
 </div>
@@ -522,7 +517,6 @@
 <div class="form-row"><div class="form-group"><label>豆瓣评分</label><input type="text" id="projRating" placeholder="如：8.5"></div><div class="form-group"><label>豆瓣评分人次</label><input type="text" id="projRatingCount" placeholder="如：382000"></div></div>
 <div class="form-row"><div class="form-group"><label>海报图片URL</label><input type="text" id="projPoster" placeholder="图片 public_id 或完整URL"></div><div class="form-group"><label>原著</label><input type="text" id="projOriginal"></div></div>
 
-<!-- 获奖信息区域 -->
 <div class="form-group">
     <label>🏆 获奖信息（可多选）</label>
     <div class="award-check-group" id="awardCheckGroup">
@@ -588,7 +582,6 @@
     const CLOUDINARY_CLOUD_NAME = "dzklapat6";
     const CLOUDINARY_BASE_URL = "https://res.cloudinary.com/" + CLOUDINARY_CLOUD_NAME + "/image/upload/";
     
-    // ==================== 奖项系数映射 ====================
     const AWARD_COEFFICIENTS = {
         'fiveone_special': 0.50,
         'jinying_best_drama': 0.42, 'jinying_best_director': 0.28, 'jinying_best_writer': 0.25,
@@ -639,7 +632,6 @@
     let currentPersonPhotoFile = null;
     let currentUploadFiles = [];
 
-    // ==================== 辅助函数 ====================
     function getPosterUrl(poster) { if(!poster) return null; if(poster.startsWith('http')) return poster; return CLOUDINARY_BASE_URL + poster; }
     function h(s) { if(!s) return ''; return s.replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
     
@@ -655,21 +647,41 @@
     function getLevelWeight(level) { if(level==='S') return 1.3; if(level==='A+') return 1.15; if(level==='A') return 1.0; return 0.85; }
     function getProgressBonus(status) { return (status==='已杀青'||status==='已开机')?0.2:0; }
     
-    // 计算获奖分（核心奖参与衰减，辅助奖直接累加）
+    // 去重：确保同一影人在同一项目中只计算一次（取最高角色权重）
+    function calculatePersonProjectContribution(personName, project, roleInProject) {
+        // 检查该项目中该影人所有可能的角色
+        let roles = [];
+        if (project.director && project.director.includes(personName)) roles.push({role: '导演', weight: 1.0});
+        if (project.writer && project.writer.includes(personName)) roles.push({role: '编剧', weight: 1.0});
+        if (project.male1 && project.male1.includes(personName)) roles.push({role: '男主', weight: 1.0});
+        if (project.female1 && project.female1.includes(personName)) roles.push({role: '女主', weight: 1.0});
+        if (project.male2 && project.male2.includes(personName)) roles.push({role: '男二', weight: 0.5});
+        if (project.female2 && project.female2.includes(personName)) roles.push({role: '女二', weight: 0.5});
+        
+        // 如果通过项目字段找到了角色，使用最高权重
+        if (roles.length > 0) {
+            let maxWeight = Math.max(...roles.map(r => r.weight));
+            let contribution = getContributionScore(project);
+            return contribution * maxWeight;
+        }
+        
+        // 否则使用传入的角色权重
+        let roleWeight = getRoleWeight(roleInProject, personName, project);
+        let contribution = getContributionScore(project);
+        return contribution * roleWeight;
+    }
+    
     function calculateAwardBonus(awards) {
         if (!awards || awards.length === 0) return 0;
-        // 核心奖列表（系数>=0.20）
         const coreAwards = awards.filter(a => AWARD_COEFFICIENTS[a] >= 0.20);
         const auxAwards = awards.filter(a => AWARD_COEFFICIENTS[a] < 0.20);
         
-        // 核心奖衰减
         let coreSum = 0;
         for (let a of coreAwards) coreSum += AWARD_COEFFICIENTS[a] || 0;
         const n = coreAwards.length;
         const attenuation = n > 0 ? 1 / (1 + Math.log10(n)) : 1;
         const coreBonus = coreSum * attenuation;
         
-        // 辅助奖直接累加
         let auxBonus = 0;
         for (let a of auxAwards) auxBonus += AWARD_COEFFICIENTS[a] || 0;
         
@@ -686,7 +698,6 @@
         }
     }
     
-    // 获取获奖标签HTML（缩小版）
     function getAwardTagsHtml(project) {
         let awards = getProjectAwardsList(project);
         if (awards.length === 0) return "-";
@@ -706,7 +717,6 @@
         return tags.join('');
     }
     
-    // 计算贡献分（核心函数 - 加法方案）
     function getContributionScore(p, returnBreakdown = false) {
         let status = getStatus(p);
         let doubanScore = 0;
@@ -750,7 +760,6 @@
     
     function calculateDaysBetween(d1,d2) { if(!d1||!d2) return null; const parse = ds => ds.length===8?new Date(parseInt(ds.substr(0,4)), parseInt(ds.substr(4,2))-1, parseInt(ds.substr(6,2))).getTime():new Date(ds).getTime(); let t1=parse(d1), t2=parse(d2); if(t1===0||t2===0) return null; return Math.ceil(Math.abs(t2-t1)/(86400000))+1; }
     
-    // ==================== 获奖选择框函数 ====================
     function updateSelectedAwardsDisplay() {
         let selected = [];
         let checkboxes = document.querySelectorAll('#awardCheckGroup input[type="checkbox"]');
@@ -796,17 +805,14 @@
         return selected;
     }
     
-    // ==================== 平台选择函数 ====================
     function getSelectedPlatforms() { let selected=[]; document.querySelectorAll('#platformCheckGroup input[type="checkbox"]').forEach(cb=>{ if(cb.checked){ if(cb.value==="其他"){ let other=document.getElementById("otherPlatformInput").value.trim(); if(other) selected.push(other); } else selected.push(cb.value); } }); return selected; }
     function updateSelectedDisplay() { let selected=getSelectedPlatforms(); let div=document.getElementById("selectedPlatformsDisplay"); if(selected.length===0) div.innerHTML='<span>已选：无</span>'; else { let html=''; selected.forEach(s=>html+='<span>'+h(s)+'</span>'); div.innerHTML=html; } }
     function setPlatformCheckboxes(val) { let checkboxes=document.querySelectorAll('#platformCheckGroup input[type="checkbox"]'); checkboxes.forEach(c=>c.checked=false); document.getElementById("otherPlatformInput").value=""; document.getElementById("otherInputGroup").style.display="none"; if(!val) { updateSelectedDisplay(); return; } let platforms=val.split(/[、,，]/); let others=[]; platforms.forEach(p=>{ p=p.trim(); let found=false; checkboxes.forEach(cb=>{ if(cb.value===p && cb.value!=="其他"){ cb.checked=true; found=true; } }); if(!found && p) others.push(p); }); if(others.length){ let otherCb=document.querySelector('#platformCheckGroup input[value="其他"]'); if(otherCb) otherCb.checked=true; document.getElementById("otherPlatformInput").value=others.join("、"); document.getElementById("otherInputGroup").style.display="flex"; } updateSelectedDisplay(); }
     
-    // ==================== 长按菜单 ====================
     function showActionMenu(x,y,target){ currentActionTarget=target; let menu=document.getElementById("actionMenu"); menu.style.left=x+"px"; menu.style.top=y+"px"; menu.style.opacity="1"; menu.style.visibility="visible"; }
     function hideActionMenu(){ let menu=document.getElementById("actionMenu"); menu.style.opacity="0"; menu.style.visibility="hidden"; currentActionTarget=null; }
     function bindLongPress(el,cb){ let timer,triggered; const start=(e)=>{ triggered=false; timer=setTimeout(()=>{ triggered=true; let touch=e.touches?e.touches[0]:e; cb(touch.clientX,touch.clientY); },500); }; const cancel=()=>{ clearTimeout(timer); }; el.addEventListener("touchstart",start,{passive:true}); el.addEventListener("touchend",cancel); el.addEventListener("touchmove",cancel); el.addEventListener("mousedown",start); el.addEventListener("mouseup",cancel); el.addEventListener("mouseleave",cancel); }
     
-    // ==================== 数据操作 ====================
     async function loadProjects() { let {data,error}=await client.from("projects").select("*").order("id",{ascending:false}); if(error) return; projects=data||[]; updateStats(); renderProjectsTable(); }
     
     function updateStats(){ let total=projects.length,kaiji=0,shaqing=0,yibochu=0; projects.forEach(p=>{ let s=getStatus(p); if(s==="已播出") yibochu++; else if(s==="已杀青") shaqing++; else if(s==="已开机") kaiji++; }); document.getElementById("statsContainer").innerHTML=`<div class="stat-card"><div class="stat-number">${total}</div><div>总项目</div></div><div class="stat-card"><div class="stat-number">${kaiji}</div><div>已开机</div></div><div class="stat-card"><div class="stat-number">${shaqing}</div><div>已杀青</div></div><div class="stat-card"><div class="stat-number">${yibochu}</div><div>已播出</div></div>`; }
@@ -907,7 +913,6 @@
         detail += '<div style="margin-bottom:8px;"><span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span> <span class="status-badge ' + getStatusClass(getStatus(p)) + '">' + getStatus(p) + '</span></div>'; 
         detail += '<h3>' + h(p.name) + '</h3></div></div>'; 
         
-        // 贡献分显示（蓝色，带构成说明）
         let breakdownHtml = '';
         if (getStatus(p) === "已播出") {
             breakdownHtml = `<div class="score-breakdown">豆瓣加权 ${contributionBreakdown.douban.toFixed(2)} + 云合加权 ${contributionBreakdown.yunhe.toFixed(2)} + 获奖加权 ${contributionBreakdown.award.toFixed(2)}</div>`;
@@ -1038,33 +1043,65 @@
     
     async function syncPeopleForProject(projectId, projectData) {
         let personRoles = []; 
+        let personMap = new Map(); // 用于去重，存储 {personName: maxWeight}
+        
         if (projectData.director && projectData.director.trim() !== "") { 
-            projectData.director.split(/[、,，]/).map(s=>s.trim()).filter(s=>s).forEach(d=>personRoles.push({name:d, role:'导演'}));
+            projectData.director.split(/[、,，]/).map(s=>s.trim()).filter(s=>s).forEach(d => {
+                let existing = personMap.get(d);
+                let weight = 1.0;
+                if (!existing || existing.weight < weight) personMap.set(d, {role: '导演', weight: weight});
+            });
         } 
         if (projectData.writer && projectData.writer.trim() !== "") { 
-            projectData.writer.split(/[、,，]/).map(s=>s.trim()).filter(s=>s).forEach(w=>personRoles.push({name:w, role:'编剧'}));
+            projectData.writer.split(/[、,，]/).map(s=>s.trim()).filter(s=>s).forEach(w => {
+                let existing = personMap.get(w);
+                let weight = 1.0;
+                if (!existing || existing.weight < weight) personMap.set(w, {role: '编剧', weight: weight});
+            });
         } 
         if (projectData.male1 && projectData.male1.trim() !== "") { 
-            projectData.male1.split(/[、,，]/).map(s=>s.trim()).filter(s=>s).forEach(m=>personRoles.push({name:m, role:'男主'}));
+            projectData.male1.split(/[、,，]/).map(s=>s.trim()).filter(s=>s).forEach(m => {
+                let existing = personMap.get(m);
+                let weight = 1.0;
+                if (!existing || existing.weight < weight) personMap.set(m, {role: '男主', weight: weight});
+            });
         } 
         if (projectData.female1 && projectData.female1.trim() !== "") { 
-            projectData.female1.split(/[、,，]/).map(s=>s.trim()).filter(s=>s).forEach(f=>personRoles.push({name:f, role:'女主'}));
+            projectData.female1.split(/[、,，]/).map(s=>s.trim()).filter(s=>s).forEach(f => {
+                let existing = personMap.get(f);
+                let weight = 1.0;
+                if (!existing || existing.weight < weight) personMap.set(f, {role: '女主', weight: weight});
+            });
         } 
         if (projectData.male2 && projectData.male2.trim() !== "") { 
-            projectData.male2.split(/[、,，]/).map(s=>s.trim()).filter(s=>s).forEach(m=>personRoles.push({name:m, role:'男二'}));
+            projectData.male2.split(/[、,，]/).map(s=>s.trim()).filter(s=>s).forEach(m => {
+                let existing = personMap.get(m);
+                let weight = 0.5;
+                if (!existing || existing.weight < weight) personMap.set(m, {role: '男二', weight: weight});
+            });
         } 
         if (projectData.female2 && projectData.female2.trim() !== "") { 
-            projectData.female2.split(/[、,，]/).map(s=>s.trim()).filter(s=>s).forEach(f=>personRoles.push({name:f, role:'女二'}));
+            projectData.female2.split(/[、,，]/).map(s=>s.trim()).filter(s=>s).forEach(f => {
+                let existing = personMap.get(f);
+                let weight = 0.5;
+                if (!existing || existing.weight < weight) personMap.set(f, {role: '女二', weight: weight});
+            });
         } 
-        let uniquePersons = []; let personNames = {}; 
-        for(let pr of personRoles){ if(!personNames[pr.name]){ personNames[pr.name]=true; uniquePersons.push(pr); } }
-        for(let pr of uniquePersons){
-            let {data:existing}=await client.from("people").select("id").eq("name",pr.name);
-            let personId; 
-            if(existing && existing.length>0){ personId=existing[0].id; }
-            else{ let {data:newPerson,error}=await client.from("people").insert([{name:pr.name}]).select(); if(error){console.error("创建影人失败:",error); continue;} personId=newPerson[0].id; }
-            let {data:existingRel}=await client.from("person_projects").select("id").eq("person_id",personId).eq("project_id",projectId);
-            if(!existingRel || existingRel.length===0){ await client.from("person_projects").insert([{person_id:personId, project_id:projectId, role_in_project:pr.role}]); }
+        
+        for (let [name, roleInfo] of personMap) {
+            let { data: existing } = await client.from("people").select("id").eq("name", name);
+            let personId;
+            if (existing && existing.length > 0) {
+                personId = existing[0].id;
+            } else {
+                let { data: newPerson, error } = await client.from("people").insert([{ name: name }]).select();
+                if (error) { console.error("创建影人失败:", error); continue; }
+                personId = newPerson[0].id;
+            }
+            let { data: existingRel } = await client.from("person_projects").select("id").eq("person_id", personId).eq("project_id", projectId);
+            if (!existingRel || existingRel.length === 0) {
+                await client.from("person_projects").insert([{ person_id: personId, project_id: projectId, role_in_project: roleInfo.role }]);
+            }
         }
     }
     
@@ -1074,7 +1111,6 @@
         else { loadProjects(); closeDetail(); } 
     }
     
-    // 影人相关函数（保持原有逻辑，使用新的贡献分）
     async function loadPeopleData() {
         const { data: people, error: peopleError } = await client.from("people").select("*"); 
         if (peopleError) { console.error("加载影人失败", peopleError); return; } 
@@ -1085,15 +1121,45 @@
         for (let i = 0; i < peopleData.length; i++) {
             let person = peopleData[i]; 
             let personProjects = relations.filter(r=>r.person_id===person.id);
-            let totalScore = 0; let works = []; let pendingWorks = []; 
+            let projectContributions = new Map(); // 用于去重，key: project_id
+            let totalScore = 0; 
+            let works = []; 
+            let pendingWorks = []; 
             for (let j = 0; j < personProjects.length; j++) { 
-                let r = personProjects[j]; let proj = r.projects; if (!proj) continue; 
+                let r = personProjects[j]; 
+                let proj = r.projects; 
+                if (!proj) continue; 
+                // 如果该项目已经计算过，跳过（避免重复计算）
+                if (projectContributions.has(proj.id)) continue;
+                
                 let contribution = getContributionScore(proj);
-                let roleWeight = getRoleWeight(r.role_in_project, person.name, proj); 
+                // 计算该影人在该项目中的最高角色权重
+                let maxWeight = 0;
+                let bestRole = r.role_in_project;
+                
+                if (proj.director && proj.director.includes(person.name)) maxWeight = Math.max(maxWeight, 1.0);
+                if (proj.writer && proj.writer.includes(person.name)) maxWeight = Math.max(maxWeight, 1.0);
+                if (proj.male1 && proj.male1.includes(person.name)) maxWeight = Math.max(maxWeight, 1.0);
+                if (proj.female1 && proj.female1.includes(person.name)) maxWeight = Math.max(maxWeight, 1.0);
+                if (proj.male2 && proj.male2.includes(person.name)) maxWeight = Math.max(maxWeight, 0.5);
+                if (proj.female2 && proj.female2.includes(person.name)) maxWeight = Math.max(maxWeight, 0.5);
+                
+                let roleWeight = maxWeight > 0 ? maxWeight : getRoleWeight(r.role_in_project, person.name, proj);
                 let personContribution = contribution * roleWeight; 
                 totalScore += personContribution; 
-                let workInfo = { name: proj.name, role: r.role_in_project, contribution: personContribution, status: getStatus(proj), rating: proj.rating, yunhe_share: proj.yunhe_peak_share, year: proj.air_date ? proj.air_date.substring(0,4) : (proj.end_date ? proj.end_date.substring(0,4) : (proj.start_date ? proj.start_date.substring(0,4) : '')) };
-                if (proj.air_date && proj.rating) works.push(workInfo); else pendingWorks.push(workInfo);
+                projectContributions.set(proj.id, true);
+                
+                let workInfo = { 
+                    name: proj.name, 
+                    role: bestRole, 
+                    contribution: personContribution, 
+                    status: getStatus(proj), 
+                    rating: proj.rating, 
+                    yunhe_share: proj.yunhe_peak_share, 
+                    year: proj.air_date ? proj.air_date.substring(0,4) : (proj.end_date ? proj.end_date.substring(0,4) : (proj.start_date ? proj.start_date.substring(0,4) : '')) 
+                };
+                if (proj.air_date && proj.rating) works.push(workInfo); 
+                else pendingWorks.push(workInfo);
             } 
             works.sort((a,b)=>b.contribution - a.contribution); 
             pendingWorks.sort((a,b)=>b.contribution - a.contribution); 
@@ -1292,7 +1358,6 @@
         checkboxes.forEach(cb=>{ cb.onchange = function(){ updateSelectedDisplay(); if(otherCb && otherCb.checked) otherGroup.style.display="flex"; else { otherGroup.style.display="none"; otherInput.value=""; updateSelectedDisplay(); } }; });
         otherInput.oninput = updateSelectedDisplay; 
         updateSelectedDisplay(); 
-        // 获奖选择框事件
         let awardCheckboxes = document.querySelectorAll('#awardCheckGroup input[type="checkbox"]');
         awardCheckboxes.forEach(cb=>{ cb.onchange = function(){ updateSelectedAwardsDisplay(); }; });
     }
