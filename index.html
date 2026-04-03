@@ -121,7 +121,7 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 12px;
-            min-width: 1600px;
+            min-width: 1700px;
         }
 
         .project-table th {
@@ -469,7 +469,6 @@
             resize: vertical;
         }
 
-        /* 图片上传样式 */
         .upload-container {
             margin: 16px 0;
         }
@@ -510,7 +509,7 @@
     <div class="container">
         <div class="header">
             <h1>影视项目数据库</h1>
-            <p>剧目级别 · 类型 · 主创团队 · 进度追踪 · 豆瓣评分 · 多人共享</p>
+            <p>剧目级别 · 类型 · 主创团队 · 进度追踪 · 豆瓣评分 · 云合市占率 · 多人共享</p>
         </div>
         <div class="stats" id="statsContainer"></div>
         <div class="tabs"> 
@@ -567,6 +566,7 @@
                             <th>男二</th>
                             <th>女二</th>
                             <th>出品/制作</th>
+                            <th>云合最高市占率</th>
                             <th>豆瓣评分</th>
                             <th>评分人次</th>
                             <th>状态</th>
@@ -669,13 +669,16 @@
             </div>
             <div class="form-row">
                 <div class="form-group"><label>制片人</label><input type="text" id="projCoProducer"></div>
-                <div class="form-group"><label>豆瓣评分</label><input type="text" id="projRating" placeholder="如：8.5"></div>
+                <div class="form-group"><label>云合最高市占率(%)</label><input type="text" id="projYunheShare" placeholder="如：15.5"></div>
             </div>
             <div class="form-row">
+                <div class="form-group"><label>豆瓣评分</label><input type="text" id="projRating" placeholder="如：8.5"></div>
                 <div class="form-group"><label>豆瓣评分人次</label><input type="text" id="projRatingCount" placeholder="如：382000"></div>
-                <div class="form-group"><label>海报图片URL</label><input type="text" id="projPoster" placeholder="图片 public_id 或完整URL"></div>
             </div>
-            <div class="form-group"><label>原著</label><input type="text" id="projOriginal"></div> 
+            <div class="form-row">
+                <div class="form-group"><label>海报图片URL</label><input type="text" id="projPoster" placeholder="图片 public_id 或完整URL"></div>
+                <div class="form-group"><label>原著</label><input type="text" id="projOriginal"></div>
+            </div>
             <button class="btn-submit" id="saveBtn">保存</button>
         </div>
     </div>
@@ -695,7 +698,6 @@
             <div class="form-group"><label>主要获奖</label><textarea id="personAwards" rows="3" placeholder="每行一个奖项"></textarea></div>
             <div class="form-group"><label>其他信息</label><textarea id="personOtherInfo" rows="3" placeholder="如：爱好、语言等"></textarea></div>
             
-            <!-- 影人照片上传区域 -->
             <div class="upload-container" style="margin: 16px 0;">
                 <div id="personUploadArea" class="upload-area">
                     <div style="font-size: 32px; margin-bottom: 8px;">📷</div>
@@ -806,6 +808,7 @@
             return CLOUDINARY_BASE_URL + poster; 
         }
 
+        // ==================== 评分人次权重 ====================
         function getVoteWeight(count) {
             if (!count) return 1.0; 
             let num = parseFloat(count); 
@@ -820,7 +823,8 @@
             return 0.8;
         }
 
-        function getQualityWeight(rating) { 
+        // ==================== 质量权重（仅评分区间） ====================
+        function getQualityWeightOnly(rating) { 
             if (!rating) return 1.0; 
             let r = parseFloat(rating); 
             if (isNaN(r)) return 1.0; 
@@ -831,23 +835,64 @@
             if (r >= 7.0) return 0.95; 
             if (r >= 6.5) return 0.90; 
             if (r >= 6.0) return 0.85; 
-            return 0.80; 
+            if (r >= 5.0) return 0.80;
+            return 0.70; 
         }
 
+        // ==================== 市占率标准化分 ====================
+        function getYunheStandardizedScore(share) {
+            if (!share && share !== 0) return 0;
+            let s = parseFloat(share);
+            if (isNaN(s)) return 0;
+            if (s >= 65) return 20.0;
+            if (s >= 30) return 10 + (s - 30) * (10 / 35);
+            return s / 3;
+        }
+
+        // ==================== 级别权重（仅用于未播出项目） ====================
+        function getLevelWeight(level) {
+            switch(level) {
+                case 'S': return 1.3;
+                case 'A+': return 1.15;
+                case 'A': return 1.0;
+                case 'B+': return 0.85;
+                default: return 1.0;
+            }
+        }
+
+        // ==================== 进度系数（未播出项目） ====================
+        function getProgressBonus(status) {
+            switch(status) {
+                case '已杀青': return 0.2;
+                case '已开机': return 0.2;
+                default: return 0;
+            }
+        }
+
+        // ==================== 项目基础分计算（核心公式） ====================
         function getProjectBaseScore(p) { 
-            if (p.air_date && p.air_date !== "") { 
+            let status = getStatus(p);
+            
+            // 已播出项目
+            if (status === "已播出") { 
                 let rating = parseFloat(p.rating); 
-                if (isNaN(rating)) return 0; 
-                let voteWeight = getVoteWeight(p.rating_count); 
-                let qualityWeight = getQualityWeight(p.rating); 
-                return rating * voteWeight * qualityWeight; 
-            } else if (p.end_date && p.end_date !== "") { 
-                return 5.0; 
-            } else if (p.start_date && p.start_date !== "") { 
-                return 4.5; 
-            } else { 
-                return 3.0; 
+                if (isNaN(rating)) return 0;
+                
+                // 豆瓣最终分 = 评分 × 人次权重 × 质量权重
+                let ratingFinal = rating * getVoteWeight(p.rating_count) * getQualityWeightOnly(rating);
+                
+                // 市占率部分 = 标准化分
+                let shareScore = getYunheStandardizedScore(p.yunhe_peak_share);
+                
+                // 加权平均（豆瓣45%，市占率55%）
+                return ratingFinal * 0.45 + shareScore * 0.55;
             } 
+            
+            // 未播出项目
+            let levelWeight = getLevelWeight(p.level);
+            let progressBonus = getProgressBonus(status);
+            
+            return levelWeight * (1 + progressBonus);
         }
 
         function getRoleWeight(role, personName, project) {
@@ -992,7 +1037,7 @@
         }
 
         async function loadProjects() { 
-            document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="loading">加载数据中...</td></tr>'; 
+            document.getElementById("tableBody").innerHTML = '<tr><td colspan="20" class="loading">加载数据中...</td></tr>'; 
             let { data, error } = await client.from("projects").select("*").order("id", { ascending: false }); 
             if (error) { 
                 console.error(error); 
@@ -1018,7 +1063,6 @@
             document.getElementById("statsContainer").innerHTML = statsHtml;
         }
 
-        // 计算两个日期之间的天数（包含起始和结束当天）
         function calculateDaysBetween(date1, date2) {
             if (!date1 || !date2) return null;
             const d1 = parseDateForCalc(date1);
@@ -1055,7 +1099,7 @@
                 if (pass) filtered.push(p); 
             } 
             if (filtered.length === 0) { 
-                document.getElementById("tableBody").innerHTML = '<tr><td colspan="19" class="loading">暂无数据</td></tr>'; 
+                document.getElementById("tableBody").innerHTML = '<tr><td colspan="20" class="loading">暂无数据</td></tr>'; 
                 return; 
             } 
             const today = new Date(); 
@@ -1099,7 +1143,8 @@
             for (let i = 0; i < filtered.length; i++) {
                 let p = filtered[i]; 
                 let status = getStatus(p); 
-                let ratingDisplay = p.rating ? '<span class="rating-badge ' + getRatingClass(p.rating) + '">' + p.rating + '</span>' : "-"; 
+                let ratingDisplay = p.rating ? '<span class="rating-badge ' + getRatingClass(p.rating) + '">' + p.rating + '</span>' : "-";
+                let yunheDisplay = p.yunhe_peak_share ? p.yunhe_peak_share + '%' : "-";
                 html += '<tr data-id="' + p.id + '">'; 
                 html += '<td style="font-weight:500;">' + h(p.name) + '</td>'; 
                 html += '<td><span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span></td>';
@@ -1117,6 +1162,7 @@
                 html += '<td>' + h(p.male2 || "-") + '</td>'; 
                 html += '<td>' + h(p.female2 || "-") + '</td>'; 
                 html += '<td>' + h(p.studio || "-") + '</td>'; 
+                html += '<td>' + yunheDisplay + '</td>';
                 html += '<td>' + ratingDisplay + '</td>'; 
                 html += '<td>' + formatCount(p.rating_count) + '</td>'; 
                 html += '<td><span class="status-badge ' + getStatusClass(status) + '">' + status + '</span></td>'; 
@@ -1144,66 +1190,69 @@
             }
         }
 
-function showProjectDetail(p) {
-    let actors = [p.male1, p.female1, p.male2, p.female2].filter(function (x) { return x && x !== ""; }).join(" / "); 
-    let posterUrl = getPosterUrl(p.poster); 
-    let posterHtml = posterUrl ? "<img class='poster-image' src='" + h(posterUrl) + "' onerror=\"this.onerror=null; this.parentElement.innerHTML='<div class=\\'poster-placeholder\\'>图片加载失败</div>';\">" : "<div class='poster-placeholder'>暂无海报</div>";
-    
-    // 计算天数信息（含集均效率）
-    let shootingLine = '';
-    let productionLine = '';
-    
-    if (p.start_date && p.end_date) {
-        const shootingDays = calculateDaysBetween(p.start_date, p.end_date);
-        if (shootingDays !== null && shootingDays > 0) {
-            const episodes = parseFloat(p.episodes);
-            if (episodes && !isNaN(episodes) && episodes > 0) {
-                const efficiency = episodes / shootingDays;
-                const efficiencyRounded = Math.round(efficiency * 10) / 10;
-                shootingLine = `<div style="color:#64748b; font-size:11px; margin-top:4px;">拍摄周期：${shootingDays}天，平均 ${efficiencyRounded}集/天</div>`;
-            } else {
-                shootingLine = `<div style="color:#64748b; font-size:11px; margin-top:4px;">拍摄周期：${shootingDays}天</div>`;
+        function showProjectDetail(p) {
+            let actors = [p.male1, p.female1, p.male2, p.female2].filter(function (x) { return x && x !== ""; }).join(" / "); 
+            let posterUrl = getPosterUrl(p.poster); 
+            let posterHtml = posterUrl ? "<img class='poster-image' src='" + h(posterUrl) + "' onerror=\"this.onerror=null; this.parentElement.innerHTML='<div class=\\'poster-placeholder\\'>图片加载失败</div>';\">" : "<div class='poster-placeholder'>暂无海报</div>";
+            
+            let shootingLine = '';
+            let productionLine = '';
+            
+            if (p.start_date && p.end_date) {
+                const shootingDays = calculateDaysBetween(p.start_date, p.end_date);
+                if (shootingDays !== null && shootingDays > 0) {
+                    const episodes = parseFloat(p.episodes);
+                    if (episodes && !isNaN(episodes) && episodes > 0) {
+                        const efficiency = episodes / shootingDays;
+                        const efficiencyRounded = Math.round(efficiency * 10) / 10;
+                        shootingLine = `<div style="color:#64748b; font-size:11px; margin-top:4px;">拍摄周期：${shootingDays}天，平均 ${efficiencyRounded}集/天</div>`;
+                    } else {
+                        shootingLine = `<div style="color:#64748b; font-size:11px; margin-top:4px;">拍摄周期：${shootingDays}天</div>`;
+                    }
+                }
             }
-        }
-    }
-    
-    if (p.end_date && p.air_date) {
-        const productionDays = calculateDaysBetween(p.end_date, p.air_date);
-        if (productionDays !== null && productionDays > 0) {
-            const episodes = parseFloat(p.episodes);
-            if (episodes && !isNaN(episodes) && episodes > 0) {
-                const efficiency = episodes / productionDays;
-                const efficiencyRounded = Math.round(efficiency * 10) / 10;
-                productionLine = `<div style="color:#64748b; font-size:11px; margin-top:4px;">后期制作周期：${productionDays}天，平均 ${efficiencyRounded}集/天</div>`;
-            } else {
-                productionLine = `<div style="color:#64748b; font-size:11px; margin-top:4px;">后期制作周期：${productionDays}天</div>`;
+            
+            if (p.end_date && p.air_date) {
+                const productionDays = calculateDaysBetween(p.end_date, p.air_date);
+                if (productionDays !== null && productionDays > 0) {
+                    const episodes = parseFloat(p.episodes);
+                    if (episodes && !isNaN(episodes) && episodes > 0) {
+                        const efficiency = episodes / productionDays;
+                        const efficiencyRounded = Math.round(efficiency * 10) / 10;
+                        productionLine = `<div style="color:#64748b; font-size:11px; margin-top:4px;">后期制作周期：${productionDays}天，平均 ${efficiencyRounded}集/天</div>`;
+                    } else {
+                        productionLine = `<div style="color:#64748b; font-size:11px; margin-top:4px;">后期制作周期：${productionDays}天</div>`;
+                    }
+                }
             }
+            
+            let efficiencyHtml = '';
+            if (shootingLine || productionLine) {
+                efficiencyHtml = shootingLine + productionLine;
+            }
+            
+            let yunheDisplay = p.yunhe_peak_share ? p.yunhe_peak_share + '%' : "无数据";
+            let yunheWeight = p.yunhe_peak_share ? getYunheStandardizedScore(p.yunhe_peak_share) : 0;
+            
+            let detail = '<div class="poster-container">' + posterHtml + '<div class="poster-info">'; 
+            detail += '<div style="margin-bottom:8px;"><span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span> <span class="status-badge ' + getStatusClass(getStatus(p)) + '">' + getStatus(p) + '</span></div>'; 
+            detail += '<h3>' + h(p.name) + '</h3></div></div>'; 
+            detail += '<div class="detail-block"><strong>类型/集数</strong> ' + h(p.type || "-") + ' / ' + (p.episodes || "-") + '<br><strong>开机/杀青/播出</strong> ' + (p.start_date || "-") + ' / ' + (p.end_date || "-") + ' / ' + (p.air_date || "-") + efficiencyHtml + '</div>'; 
+            detail += '<div class="detail-block"><strong>网播平台</strong> ' + h(p.online_platform || "-") + '<br><strong>台播平台</strong> ' + h(p.tv_platform || "-") + '</div>'; 
+            detail += '<div class="detail-block"><strong>导演/编剧</strong> ' + h(p.director || "-") + ' / ' + h(p.writer || "-") + '<br><strong>主演</strong> ' + (actors || "-") + '</div>'; 
+            detail += '<div class="detail-block"><strong>出品/制作</strong> ' + h(p.studio || "-") + '<br><strong>总制片人</strong> ' + (p.producer || "-") + '<br><strong>制片人</strong> ' + (p.co_producer || "-") + '</div>'; 
+            detail += '<div class="detail-block"><strong>云合最高市占率</strong> ' + yunheDisplay + ' <span style="color:#64748b; font-size:10px;">【标准化分 ' + yunheWeight.toFixed(2) + '】</span><br>' +
+                '<strong>豆瓣评分</strong> ' + (p.rating || "-") + ' (' + formatCount(p.rating_count) + ')<br><strong>原著</strong> ' + h(p.original || "-") + '</div>'; 
+            document.getElementById("detailContent").innerHTML = detail; 
+            document.getElementById("editDetailBtn").onclick = function () { 
+                closeDetail(); 
+                openEdit(p.id); 
+            }; 
+            document.getElementById("deleteDetailBtn").onclick = function () { 
+                if (confirm("删除《" + p.name + "》？")) deleteProject(p.id); 
+            }; 
+            document.getElementById("detailModal").classList.add("active");
         }
-    }
-    
-    let efficiencyHtml = '';
-    if (shootingLine || productionLine) {
-        efficiencyHtml = shootingLine + productionLine;
-    }
-    
-    let detail = '<div class="poster-container">' + posterHtml + '<div class="poster-info">'; 
-    detail += '<div style="margin-bottom:8px;"><span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span> <span class="status-badge ' + getStatusClass(getStatus(p)) + '">' + getStatus(p) + '</span></div>'; 
-    detail += '<h3>' + h(p.name) + '</h3></div></div>'; 
-    detail += '<div class="detail-block"><strong>类型/集数</strong> ' + h(p.type || "-") + ' / ' + (p.episodes || "-") + '<br><strong>开机/杀青/播出</strong> ' + (p.start_date || "-") + ' / ' + (p.end_date || "-") + ' / ' + (p.air_date || "-") + efficiencyHtml + '</div>'; 
-    detail += '<div class="detail-block"><strong>网播平台</strong> ' + h(p.online_platform || "-") + '<br><strong>台播平台</strong> ' + h(p.tv_platform || "-") + '</div>'; 
-    detail += '<div class="detail-block"><strong>导演/编剧</strong> ' + h(p.director || "-") + ' / ' + h(p.writer || "-") + '<br><strong>主演</strong> ' + (actors || "-") + '</div>'; 
-    detail += '<div class="detail-block"><strong>出品/制作</strong> ' + h(p.studio || "-") + '<br><strong>总制片人</strong> ' + (p.producer || "-") + '<br><strong>制片人</strong> ' + (p.co_producer || "-") + '</div>'; 
-    detail += '<div class="detail-block"><strong>豆瓣评分</strong> ' + (p.rating || "-") + ' (' + formatCount(p.rating_count) + ')<br><strong>原著</strong> ' + h(p.original || "-") + '</div>'; 
-    document.getElementById("detailContent").innerHTML = detail; 
-    document.getElementById("editDetailBtn").onclick = function () { 
-        closeDetail(); 
-        openEdit(p.id); 
-    }; 
-    document.getElementById("deleteDetailBtn").onclick = function () { 
-        if (confirm("删除《" + p.name + "》？")) deleteProject(p.id); 
-    }; 
-    document.getElementById("detailModal").classList.add("active");
-}
 
         function closeDetail() { 
             document.getElementById("detailModal").classList.remove("active"); 
@@ -1243,6 +1292,7 @@ function showProjectDetail(p) {
                     document.getElementById("projStudio").value = p.studio || ""; 
                     document.getElementById("projProducer").value = p.producer || ""; 
                     document.getElementById("projCoProducer").value = p.co_producer || ""; 
+                    document.getElementById("projYunheShare").value = p.yunhe_peak_share || ""; 
                     document.getElementById("projRating").value = p.rating || ""; 
                     document.getElementById("projRatingCount").value = p.rating_count || ""; 
                     document.getElementById("projPoster").value = p.poster || ""; 
@@ -1281,6 +1331,7 @@ function showProjectDetail(p) {
                 document.getElementById("projStudio").value = ""; 
                 document.getElementById("projProducer").value = ""; 
                 document.getElementById("projCoProducer").value = ""; 
+                document.getElementById("projYunheShare").value = "";
                 document.getElementById("projRating").value = ""; 
                 document.getElementById("projRatingCount").value = ""; 
                 document.getElementById("projPoster").value = ""; 
@@ -1329,6 +1380,7 @@ function showProjectDetail(p) {
                 studio: document.getElementById("projStudio").value, 
                 producer: document.getElementById("projProducer").value, 
                 co_producer: document.getElementById("projCoProducer").value, 
+                yunhe_peak_share: document.getElementById("projYunheShare").value ? parseFloat(document.getElementById("projYunheShare").value) : null,
                 rating: document.getElementById("projRating").value, 
                 rating_count: document.getElementById("projRatingCount").value, 
                 poster: document.getElementById("projPoster").value,
@@ -1577,7 +1629,6 @@ function showProjectDetail(p) {
             document.getElementById("personAwards").value = person.awards || ""; 
             document.getElementById("personOtherInfo").value = person.other_info || ""; 
             
-            // 加载现有照片预览
             currentPersonPhotoFile = person.photo || null;
             const previewContainer = document.getElementById('personImagePreview');
             if (previewContainer) {
@@ -1813,7 +1864,6 @@ function showProjectDetail(p) {
             updateSelectedDisplay(); 
         }
 
-        // 图片上传相关函数
         function addImagePreview(publicId, url) {
             const previewContainer = document.getElementById('imagePreview');
             if (!previewContainer) return;
@@ -1933,7 +1983,6 @@ function showProjectDetail(p) {
             }
         }
 
-        // 影人图片上传函数
         async function handlePersonImageUpload(file) {
             try {
                 const formData = new FormData();
