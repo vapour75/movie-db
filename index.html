@@ -1509,8 +1509,7 @@
                     let baseScore = getProjectBaseScore(proj); 
                     let roleWeight = getRoleWeight(r.role_in_project, person.name, proj); 
                     let contribution = baseScore * roleWeight; 
-                    totalScore += contribution; 
-                   let workInfo = { name: proj.name, role: r.role_in_project, contribution: contribution, status: getStatus(proj), rating: proj.rating, yunhe_share: proj.yunhe_peak_share, year:...};
+                    totalScore += contribution; let workInfo = { name: proj.name, role: r.role_in_project, contribution: contribution, status: getStatus(proj), rating: proj.rating, yunhe_share: proj.yunhe_peak_share, year: proj.air_date ? proj.air_date.substring(0, 4) : (proj.end_date ? proj.end_date.substring(0, 4) : (proj.start_date ? proj.start_date.substring(0, 4) : '')) };
                     if (proj.air_date && proj.rating) { 
                         works.push(workInfo); 
                     } else { 
