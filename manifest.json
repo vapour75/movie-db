@@ -1,0 +1,21 @@
+{
+  "name": "影视项目数据库",
+  "short_name": "影视库",
+  "description": "影视项目管理与影人评分工具",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "theme_color": "#1e293b",
+  "background_color": "#f5f7fb",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
