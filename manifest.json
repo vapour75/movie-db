@@ -2,7 +2,7 @@
   "name": "影视项目数据库",
   "short_name": "影视库",
   "description": "影视项目管理与影人评分工具",
-  "start_url": "/",
+  "start_url": "https://vapour75.github.io/movie-db/",
   "display": "standalone",
   "theme_color": "#1e293b",
   "background_color": "#f5f7fb",
