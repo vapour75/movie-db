@@ -1510,7 +1510,7 @@
                     let roleWeight = getRoleWeight(r.role_in_project, person.name, proj); 
                     let contribution = baseScore * roleWeight; 
                     totalScore += contribution; 
-                   let workInfo = { name: proj.name, role: r.role_in_project, contribution: contribution, status: getStatus(proj), rating: proj.rating, yunhe_share: proj.yunhe_peak_share, year: ... };
+                   let workInfo = { name: proj.name, role: r.role_in_project, contribution: contribution, status: getStatus(proj), rating: proj.rating, yunhe_share: proj.yunhe_peak_share, year:...};
                     if (proj.air_date && proj.rating) { 
                         works.push(workInfo); 
                     } else { 
