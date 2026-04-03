@@ -212,7 +212,23 @@
 
         .rating-high { background: #dcfce7; color: #166534; }
         .score-badge { font-weight: bold; color: #f59e0b; font-size: 16px; }
-        .contribution-badge { font-weight: bold; color: #f97316; font-size: 14px; }
+        
+        /* 贡献分蓝色 */
+        .contribution-badge { 
+            font-weight: bold; 
+            color: #3ccef7; 
+            font-size: 14px; 
+        }
+        .contribution-detail {
+            font-size: 20px;
+            font-weight: bold;
+            color: #3ccef7;
+        }
+        .score-breakdown {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 4px;
+        }
 
         .fab {
             position: fixed;
@@ -382,7 +398,7 @@
             font-size: 11px;
         }
 
-        /* 获奖标签 - 缩小一半 */
+        /* 获奖标签 - 缩小版 18x18 */
         .award-tag {
             display: inline-block;
             width: 18px;
@@ -460,18 +476,6 @@
         }
         .action-menu button:hover { background: #f1f5f9; }
         .menu-delete { color: #ef4444; }
-        
-        /* 贡献分橙色 */
-        .contribution-detail {
-            font-size: 13px;
-            font-weight: bold;
-            color: #f97316;
-        }
-        .score-breakdown {
-            font-size: 11px;
-            color: #64748b;
-            margin-top: 4px;
-        }
     </style>
 </head>
 
@@ -491,7 +495,7 @@
             <div class="filter-group"><label>状态</label><select id="statusFilter"><option value="all">全部</option><option value="已播出">已播出</option><option value="已杀青">已杀青</option><option value="已开机">已开机</option></select></div> 
             <button class="reset-btn" id="resetFilters">重置</button>
         </div>
-        <div class="table-wrapper"><table class="project-table"><thead>工作时
+        <div class="table-wrapper"><table class="project-table"><thead><tr>
 <th>剧目名称</th><th>贡献分</th><th>级别</th><th>类型</th><th>集数</th><th>开机</th><th>杀青</th><th>播出日期</th><th>网播平台</th><th>台播平台</th><th>导演</th><th>编剧</th><th>男主</th><th>女主</th><th>男二</th><th>女二</th><th>出品/制作</th><th>云合最高市占率</th><th>豆瓣评分</th><th>评分人次</th><th>获奖</th><th>状态</th>
 </thead><tbody id="tableBody"></tbody></table</div>
     </div>
@@ -542,6 +546,8 @@
         <label class="award-check-item"><input type="checkbox" value="baiyulan_best_actress"> 最佳女主角</label>
         <label class="award-check-item"><input type="checkbox" value="baiyulan_best_sup_actor"> 最佳男配角</label>
         <label class="award-check-item"><input type="checkbox" value="baiyulan_best_sup_actress"> 最佳女配角</label>
+        <label class="award-check-item"><input type="checkbox" value="baiyulan_best_cinematography"> 最佳摄影</label>
+        <label class="award-check-item"><input type="checkbox" value="baiyulan_best_art_direction"> 最佳美术</label>
         
         <div class="award-category">⭐ 飞天奖</div>
         <label class="award-check-item"><input type="checkbox" value="feitian_best_drama"> 优秀电视剧奖</label>
@@ -591,6 +597,7 @@
         'baiyulan_best_drama': 0.42, 'baiyulan_best_director': 0.28, 'baiyulan_best_writer': 0.25,
         'baiyulan_best_actor': 0.22, 'baiyulan_best_actress': 0.22,
         'baiyulan_best_sup_actor': 0.14, 'baiyulan_best_sup_actress': 0.14,
+        'baiyulan_best_cinematography': 0.08, 'baiyulan_best_art_direction': 0.08,
         'feitian_best_drama': 0.35, 'feitian_best_director': 0.28, 'feitian_best_writer': 0.25,
         'feitian_best_actor': 0.22, 'feitian_best_actress': 0.22
     };
@@ -603,6 +610,7 @@
         'baiyulan_best_drama': '白', 'baiyulan_best_director': '白', 'baiyulan_best_writer': '白',
         'baiyulan_best_actor': '白', 'baiyulan_best_actress': '白',
         'baiyulan_best_sup_actor': '白', 'baiyulan_best_sup_actress': '白',
+        'baiyulan_best_cinematography': '白', 'baiyulan_best_art_direction': '白',
         'feitian_best_drama': '飞', 'feitian_best_director': '飞', 'feitian_best_writer': '飞',
         'feitian_best_actor': '飞', 'feitian_best_actress': '飞'
     };
@@ -617,6 +625,7 @@
         'baiyulan_best_writer': '白玉兰奖·最佳编剧', 'baiyulan_best_actor': '白玉兰奖·最佳男主角',
         'baiyulan_best_actress': '白玉兰奖·最佳女主角', 'baiyulan_best_sup_actor': '白玉兰奖·最佳男配角',
         'baiyulan_best_sup_actress': '白玉兰奖·最佳女配角',
+        'baiyulan_best_cinematography': '白玉兰奖·最佳摄影', 'baiyulan_best_art_direction': '白玉兰奖·最佳美术',
         'feitian_best_drama': '飞天奖·优秀电视剧奖', 'feitian_best_director': '飞天奖·优秀导演奖',
         'feitian_best_writer': '飞天奖·优秀编剧奖', 'feitian_best_actor': '飞天奖·优秀男演员奖',
         'feitian_best_actress': '飞天奖·优秀女演员奖'
@@ -714,12 +723,12 @@
             let yunheRaw = getYunheStandardizedScore(p.yunhe_peak_share);
             doubanScore = doubanRaw * 0.375;
             yunheScore = yunheRaw * 0.475;
-            awardScore = calculateAwardBonus(getProjectAwardsList(p)) * 0.15;
+            let rawAwardBonus = calculateAwardBonus(getProjectAwardsList(p));
+            awardScore = rawAwardBonus * 0.15;
         } else {
             let levelWeight = getLevelWeight(p.level);
             let progressBonus = getProgressBonus(status);
             let baseScore = levelWeight * (1 + progressBonus);
-            // 未播出项目无豆瓣云合，只有基础分
             if (returnBreakdown) return { total: baseScore, douban: 0, yunhe: 0, award: 0 };
             return baseScore;
         }
@@ -898,12 +907,12 @@
         detail += '<div style="margin-bottom:8px;"><span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span> <span class="status-badge ' + getStatusClass(getStatus(p)) + '">' + getStatus(p) + '</span></div>'; 
         detail += '<h3>' + h(p.name) + '</h3></div></div>'; 
         
-        // 贡献分显示（橙色，带构成说明）
+        // 贡献分显示（蓝色，带构成说明）
         let breakdownHtml = '';
         if (getStatus(p) === "已播出") {
             breakdownHtml = `<div class="score-breakdown">豆瓣加权 ${contributionBreakdown.douban.toFixed(2)} + 云合加权 ${contributionBreakdown.yunhe.toFixed(2)} + 获奖加权 ${contributionBreakdown.award.toFixed(2)}</div>`;
         }
-        detail += '<div class="detail-block"><strong>🎯 贡献分</strong> <span class="contribution-detail" style="font-size:20px;">' + contribution.toFixed(2) + '</span>' + breakdownHtml + '</div>';
+        detail += '<div class="detail-block"><strong>🎯 贡献分</strong> <span class="contribution-detail">' + contribution.toFixed(2) + '</span>' + breakdownHtml + '</div>';
         
         detail += '<div class="detail-block"><strong>类型/集数</strong> ' + h(p.type || "-") + ' / ' + (p.episodes || "-") + '<br><strong>开机/杀青/播出</strong> ' + (p.start_date || "-") + ' / ' + (p.end_date || "-") + ' / ' + (p.air_date || "-") + shootingLine + productionLine + '</div>'; 
         detail += '<div class="detail-block"><strong>网播平台</strong> ' + h(p.online_platform || "-") + '<br><strong>台播平台</strong> ' + h(p.tv_platform || "-") + '</div>'; 
