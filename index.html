@@ -829,7 +829,26 @@ function getContributionScore(p, returnBreakdown = false) {
     
     function showActionMenu(x,y,target){ currentActionTarget=target; let menu=document.getElementById("actionMenu"); menu.style.left=x+"px"; menu.style.top=y+"px"; menu.style.opacity="1"; menu.style.visibility="visible"; }
     function hideActionMenu(){ let menu=document.getElementById("actionMenu"); menu.style.opacity="0"; menu.style.visibility="hidden"; currentActionTarget=null; }
-    function bindLongPress(el,cb){ let timer,triggered; const start=(e)=>{ triggered=false; timer=setTimeout(()=>{ triggered=true; let touch=e.touches?e.touches[0]:e; cb(touch.clientX,touch.clientY); },500); }; const cancel=()=>{ clearTimeout(timer); }; el.addEventListener("touchstart",start,{passive:true}); el.addEventListener("touchend",cancel); el.addEventListener("touchmove",cancel); el.addEventListener("mousedown",start); el.addEventListener("mouseup",cancel); el.addEventListener("mouseleave",cancel); }
+    function bindLongPress(el, cb) {
+    let timer;
+    const start = (e) => {
+        isLongPressTriggered = false;
+        timer = setTimeout(() => {
+            isLongPressTriggered = true;
+            let touch = e.touches ? e.touches[0] : e;
+            cb(touch.clientX, touch.clientY);
+        }, 500);
+    };
+    const cancel = () => {
+        clearTimeout(timer);
+    };
+    el.addEventListener("touchstart", start, { passive: true });
+    el.addEventListener("touchend", cancel);
+    el.addEventListener("touchmove", cancel);
+    el.addEventListener("mousedown", start);
+    el.addEventListener("mouseup", cancel);
+    el.addEventListener("mouseleave", cancel);
+}
     
     async function loadProjects() { let {data,error}=await client.from("projects").select("*").order("id",{ascending:false}); if(error) return; projects=data||[]; updateStats(); renderProjectsTable(); }
     
