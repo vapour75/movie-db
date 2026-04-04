@@ -487,9 +487,11 @@
     <div id="projectsView">
         <div class="filters" id="projectFilters">
             <div class="filter-group"><label>级别</label><select id="levelFilter"><option value="all">全部</option><option value="S">S级</option><option value="A+">A+级</option><option value="A">A级</option><option value="B+">B+级</option></select></div>
-            <div class="filter-group"><label>类型</label><select id="typeFilter"><option value="all">全部</option><option value="古装">古装</option><option value="都市">都市</option><option value="历史">历史</option><option value="犯罪">犯罪</option></select></div>
+            <div class="filter-group"><label>排序</label><select id="sortFilter"><option value="contribution_desc">贡献分 ↓ 从高到低</option></select></div>
+            <div class="filter-group"><label>类型</label><select id="typeFilter"><option value="all">全部</option><option value="爱情">爱情</option><option value="古装">古装</option><option value="都市">都市</option><option value="历史">历史</option><option value="犯罪">犯罪</option></select></div>
             <div class="filter-group"><label>网播平台</label><select id="platformFilter"><option value="all">全部</option><option value="腾讯视频">腾讯视频</option><option value="爱奇艺">爱奇艺</option><option value="优酷">优酷</option></select></div>
             <div class="filter-group"><label>状态</label><select id="statusFilter"><option value="all">全部</option><option value="已播出">已播出</option><option value="已杀青">已杀青</option><option value="已开机">已开机</option></select></div> 
+            <div class="filter-group"><label>🔍 搜索</label><input type="text" id="searchInput" placeholder="输入剧目名称" style="border:none; background:none; outline:none; width:120px;"></div>
             <button class="reset-btn" id="resetFilters">重置</button>
         </div>
         <div class="table-wrapper"><table class="project-table"><thead><tr><th>剧目名称</th><th>贡献分</th><th>级别</th><th>类型</th><th>集数</th><th>开机</th><th>杀青</th><th>播出日期</th><th>网播平台</th><th>台播平台</th><th>导演</th><th>编剧</th><th>男主</th><th>女主</th><th>男二</th><th>女二</th><th>出品/制作</th><th>云合最高市占率</th><th>豆瓣评分</th><th>评分人次</th><th>获奖</th><th>状态</th></tr></thead><tbody id="tableBody"></tbody></table></div>
@@ -817,66 +819,78 @@
     
     function updateStats(){ let total=projects.length,kaiji=0,shaqing=0,yibochu=0; projects.forEach(p=>{ let s=getStatus(p); if(s==="已播出") yibochu++; else if(s==="已杀青") shaqing++; else if(s==="已开机") kaiji++; }); document.getElementById("statsContainer").innerHTML=`<div class="stat-card"><div class="stat-number">${total}</div><div>总项目</div></div><div class="stat-card"><div class="stat-number">${kaiji}</div><div>已开机</div></div><div class="stat-card"><div class="stat-number">${shaqing}</div><div>已杀青</div></div><div class="stat-card"><div class="stat-number">${yibochu}</div><div>已播出</div></div>`; }
     
-    function renderProjectsTable() {
-        let filtered = []; 
-        for (let i = 0; i < projects.length; i++) { 
-            let p = projects[i]; let pass = true; 
-            if (filters.level !== "all" && p.level !== filters.level) pass = false; 
-            if (filters.type !== "all" && p.type && p.type.indexOf(filters.type) === -1) pass = false; 
-            if (filters.platform !== "all" && !hasPlatform(p.online_platform, filters.platform)) pass = false; 
-            if (filters.status !== "all") { let s = getStatus(p); if (s !== filters.status) pass = false; } 
-            if (pass) filtered.push(p); 
-        } 
-        if (filtered.length === 0) { document.getElementById("tableBody").innerHTML = '<tr><td colspan="22" class="loading">暂无数据</td></tr>'; return; } 
-        
-        const today = new Date(); const nineMonthsAgo = new Date(); nineMonthsAgo.setMonth(today.getMonth() - 9); 
-        function parseDate(dateStr) { if(!dateStr) return 0; if(dateStr.length===8){ const year=parseInt(dateStr.substring(0,4)), month=parseInt(dateStr.substring(4,6))-1, day=parseInt(dateStr.substring(6,8)); return new Date(year,month,day).getTime(); } return new Date(dateStr).getTime(); } 
-        function getSortGroup(p) { const status=getStatus(p); const airDate=p.air_date?parseDate(p.air_date):0; if(status==="已播出"){ if(airDate>=nineMonthsAgo.getTime()) return 1; else return 5; } else if(status==="已开机") return 2; else if(status==="待开机") return 3; else if(status==="已杀青") return 4; return 4; } 
-        function getSortDate(p) { const status=getStatus(p); if(status==="已播出") return parseDate(p.air_date); else if(status==="已开机") return parseDate(p.start_date); else if(status==="已杀青") return parseDate(p.end_date); else return p.created_at?new Date(p.created_at).getTime():0; } 
-        filtered.sort(function(a,b){ const groupA=getSortGroup(a), groupB=getSortGroup(b); if(groupA!==groupB) return groupA-groupB; return getSortDate(b)-getSortDate(a); }); 
-        
-        let html = ""; 
-        for (let i = 0; i < filtered.length; i++) {
-            let p = filtered[i]; 
-            let status = getStatus(p); 
-            let contribution = getContributionScore(p);
-            let ratingDisplay = p.rating ? '<span class="rating-badge ' + (parseFloat(p.rating)>=8?'rating-high':'') + '">' + p.rating + '</span>' : "-";
-            let yunheDisplay = p.yunhe_peak_share ? p.yunhe_peak_share + '%' : "-";
-            let awardTags = getAwardTagsHtml(p);
-            html += '<tr data-id="' + p.id + '">'; 
-            html += '<td style="font-weight:500;">' + h(p.name) + '</td>';
-            html += '<td><span class="contribution-badge">' + contribution.toFixed(2) + '</span></td>';
-            html += '<td><span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span></td>';
-            html += '<td>' + h(p.type || "-") + '</td>'; 
-            html += '<td>' + h(p.episodes || "-") + '</td>'; 
-            html += '<td>' + (p.start_date || "-") + '</td>'; 
-            html += '<td>' + (p.end_date || "-") + '</td>'; 
-            html += '<td>' + (p.air_date || "-") + '</td>'; 
-            html += '<td>' + h(p.online_platform || "-") + '</td>'; 
-            html += '<td>' + h(p.tv_platform || "-") + '</td>'; 
-            html += '<td>' + h(p.director || "-") + '</td>'; 
-            html += '<td>' + h(p.writer || "-") + '</td>'; 
-            html += '<td>' + h(p.male1 || "-") + '</td>'; 
-            html += '<td>' + h(p.female1 || "-") + '</td>'; 
-            html += '<td>' + h(p.male2 || "-") + '</td>'; 
-            html += '<td>' + h(p.female2 || "-") + '</td>'; 
-            html += '<td>' + h(p.studio || "-") + '</td>'; 
-            html += '<td>' + yunheDisplay + '</td>';
-            html += '<td>' + ratingDisplay + '</td>'; 
-            html += '<td>' + formatCount(p.rating_count) + '</td>'; 
-            html += '<td>' + awardTags + '</td>';
-            html += '<td><span class="status-badge ' + getStatusClass(status) + '">' + status + '</span></td>'; 
-            html += '</tr>';
-        } 
-        document.getElementById("tableBody").innerHTML = html; 
-        let rows = document.querySelectorAll("#tableBody tr"); 
-        for (let i = 0; i < rows.length; i++) { 
-            const row = rows[i];
-            const id = parseInt(row.getAttribute("data-id"));
-            row.onclick = function() { if (isLongPressTriggered) return; let p = projects.find(pj=>pj.id===id); if (p) showProjectDetail(p); };
-            bindLongPress(row, (x, y) => { showActionMenu(x, y, { type: 'project', id: id }); });
-        }
+function renderProjectsTable() {
+    let filtered = [];
+    let searchTerm = document.getElementById("searchInput") ? document.getElementById("searchInput").value.trim().toLowerCase() : "";
+
+    for (let i = 0; i < projects.length; i++) {
+        let p = projects[i];
+        let pass = true;
+        if (filters.level !== "all" && p.level !== filters.level) pass = false;
+        if (filters.type !== "all" && p.type && p.type.indexOf(filters.type) === -1) pass = false;
+        if (filters.platform !== "all" && !hasPlatform(p.online_platform, filters.platform)) pass = false;
+        if (filters.status !== "all") { let s = getStatus(p); if (s !== filters.status) pass = false; }
+        if (searchTerm !== "" && p.name && !p.name.toLowerCase().startsWith(searchTerm)) pass = false;
+        if (pass) filtered.push(p);
     }
+
+    if (filtered.length === 0) {
+        document.getElementById("tableBody").innerHTML = '<tr><td colspan="22" class="loading">暂无数据</td></tr>';
+        return;
+    }
+
+    filtered.sort((a, b) => getContributionScore(b) - getContributionScore(a));
+
+    let html = "";
+    for (let i = 0; i < filtered.length; i++) {
+        let p = filtered[i];
+        let status = getStatus(p);
+        let contribution = getContributionScore(p);
+        let ratingDisplay = p.rating ? '<span class="rating-badge ' + (parseFloat(p.rating) >= 8 ? 'rating-high' : '') + '">' + p.rating + '</span>' : "-";
+        let yunheDisplay = p.yunhe_peak_share ? p.yunhe_peak_share + '%' : "-";
+        let awardTags = getAwardTagsHtml(p);
+
+        html += '<tr data-id="' + p.id + '">';
+        html += '<td style="font-weight:500;">' + h(p.name) + '</td>';
+        html += '<td><span class="contribution-badge">' + contribution.toFixed(2) + '</span></td>';
+        html += '<td><span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span></td>';
+        html += '<td>' + h(p.type || "-") + '</td>';
+        html += '<td>' + h(p.episodes || "-") + '</td>';
+        html += '<td>' + (p.start_date || "-") + '</td>';
+        html += '<td>' + (p.end_date || "-") + '</td>';
+        html += '<td>' + (p.air_date || "-") + '</td>';
+        html += '<td>' + h(p.online_platform || "-") + '</td>';
+        html += '<td>' + h(p.tv_platform || "-") + '</td>';
+        html += '<td>' + h(p.director || "-") + '</td>';
+        html += '<td>' + h(p.writer || "-") + '</td>';
+        html += '<td>' + h(p.male1 || "-") + '</td>';
+        html += '<td>' + h(p.female1 || "-") + '</td>';
+        html += '<td>' + h(p.male2 || "-") + '</td>';
+        html += '<td>' + h(p.female2 || "-") + '</td>';
+        html += '<td>' + h(p.studio || "-") + '</td>';
+        html += '<td>' + yunheDisplay + '</td>';
+        html += '<td>' + ratingDisplay + '</td>';
+        html += '<td>' + formatCount(p.rating_count) + '</td>';
+        html += '<td>' + awardTags + '</td>';
+        html += '<td><span class="status-badge ' + getStatusClass(status) + '">' + status + '</span></td>';
+        html += '</tr>';
+    }
+    document.getElementById("tableBody").innerHTML = html;
+
+    let rows = document.querySelectorAll("#tableBody tr");
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const id = parseInt(row.getAttribute("data-id"));
+        row.onclick = function () {
+            if (isLongPressTriggered) return;
+            let p = projects.find(pj => pj.id === id);
+            if (p) showProjectDetail(p);
+        };
+        bindLongPress(row, (x, y) => {
+            showActionMenu(x, y, { type: 'project', id: id });
+        });
+    }
+}
     
     function showProjectDetail(p) {
         let actors = [p.male1, p.female1, p.male2, p.female2].filter(x=>x&&x!=="").join(" / "); 
@@ -1337,18 +1351,25 @@
         } 
     }
     
-    function initFilters() {
-        document.getElementById("levelFilter").onchange = function(){ filters.level=this.value; renderProjectsTable(); };
-        document.getElementById("typeFilter").onchange = function(){ filters.type=this.value; renderProjectsTable(); };
-        document.getElementById("platformFilter").onchange = function(){ filters.platform=this.value; renderProjectsTable(); };
-        document.getElementById("statusFilter").onchange = function(){ filters.status=this.value; renderProjectsTable(); };
-        document.getElementById("resetFilters").onclick = function(){
-            document.getElementById("levelFilter").value="all"; document.getElementById("typeFilter").value="all";
-            document.getElementById("platformFilter").value="all"; document.getElementById("statusFilter").value="all";
-            filters={level:"all",type:"all",platform:"all",status:"all"}; renderProjectsTable();
-        };
-        document.getElementById("peopleRoleFilter").onchange = function(){ renderPeopleTable(); };
-    }
+function initFilters() {
+    document.getElementById("levelFilter").onchange = function(){ filters.level = this.value; renderProjectsTable(); };
+    document.getElementById("sortFilter").onchange = function(){ renderProjectsTable(); };
+    document.getElementById("typeFilter").onchange = function(){ filters.type = this.value; renderProjectsTable(); };
+    document.getElementById("platformFilter").onchange = function(){ filters.platform = this.value; renderProjectsTable(); };
+    document.getElementById("statusFilter").onchange = function(){ filters.status = this.value; renderProjectsTable(); };
+    document.getElementById("searchInput").oninput = function(){ renderProjectsTable(); };
+    document.getElementById("resetFilters").onclick = function(){
+        document.getElementById("levelFilter").value = "all";
+        document.getElementById("typeFilter").value = "all";
+        document.getElementById("platformFilter").value = "all";
+        document.getElementById("statusFilter").value = "all";
+        document.getElementById("sortFilter").value = "contribution_desc";
+        document.getElementById("searchInput").value = "";
+        filters = { level: "all", type: "all", platform: "all", status: "all" };
+        renderProjectsTable();
+    };
+    document.getElementById("peopleRoleFilter").onchange = function(){ renderPeopleTable(); };
+}
     
     function initPlatformEvents() { 
         let otherCb = document.querySelector('#platformCheckGroup input[value="其他"]'); 
