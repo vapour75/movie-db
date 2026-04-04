@@ -719,38 +719,53 @@
         return tags.join('');
     }
     
-    function getContributionScore(p, returnBreakdown = false) {
-        let status = getStatus(p);
-        let doubanScore = 0;
-        let yunheScore = 0;
-        let awardScore = 0;
+function getContributionScore(p, returnBreakdown = false) {
+    let status = getStatus(p);
+    let doubanScore = 0;
+    let yunheScore = 0;
+    let awardScore = 0;
+    
+    if (status === "已播出") {
+        let rating = parseFloat(p.rating);
+        if (isNaN(rating)) {
+            if (returnBreakdown) return { total: 0, douban: 0, yunhe: 0, award: 0 };
+            return 0;
+        }
+        let doubanRaw = rating * getVoteWeight(p.rating_count) * getQualityWeightOnly(rating);
+        let yunheRaw = getYunheStandardizedScore(p.yunhe_peak_share);
         
-        if (status === "已播出") {
-            let rating = parseFloat(p.rating);
-            if (isNaN(rating)) {
-                if (returnBreakdown) return { total: 0, douban: 0, yunhe: 0, award: 0 };
-                return 0;
-            }
-            let doubanRaw = rating * getVoteWeight(p.rating_count) * getQualityWeightOnly(rating);
-            let yunheRaw = getYunheStandardizedScore(p.yunhe_peak_share);
-            doubanScore = doubanRaw * 0.375;
-            yunheScore = yunheRaw * 0.475;
-            let rawAwardBonus = calculateAwardBonus(getProjectAwardsList(p));
-            awardScore = rawAwardBonus * 0.15;
-        } else {
-            let levelWeight = getLevelWeight(p.level);
-            let progressBonus = getProgressBonus(status);
-            let baseScore = levelWeight * (1 + progressBonus);
-            if (returnBreakdown) return { total: baseScore, douban: 0, yunhe: 0, award: 0 };
-            return baseScore;
+        let doubanWeight = 0.375;
+        let yunheWeight = 0.475;
+        let awardWeight = 0.15;
+        
+        let hasYunhe = p.yunhe_peak_share && p.yunhe_peak_share !== "" && yunheRaw > 0;
+        let airDateYear = p.air_date ? parseInt(p.air_date.substring(0, 4)) : 0;
+        let isOldProject = airDateYear > 0 && airDateYear <= 2019;
+        
+        if (!hasYunhe && isOldProject) {
+            doubanWeight = 0.80;
+            yunheWeight = 0;
+            awardWeight = 0.20;
         }
         
-        let total = doubanScore + yunheScore + awardScore;
-        if (returnBreakdown) {
-            return { total, douban: doubanScore, yunhe: yunheScore, award: awardScore };
-        }
-        return total;
+        doubanScore = doubanRaw * doubanWeight;
+        yunheScore = yunheRaw * yunheWeight;
+        let rawAwardBonus = calculateAwardBonus(getProjectAwardsList(p));
+        awardScore = rawAwardBonus * awardWeight;
+    } else {
+        let levelWeight = getLevelWeight(p.level);
+        let progressBonus = getProgressBonus(status);
+        let baseScore = levelWeight * (1 + progressBonus);
+        if (returnBreakdown) return { total: baseScore, douban: 0, yunhe: 0, award: 0 };
+        return baseScore;
     }
+    
+    let total = doubanScore + yunheScore + awardScore;
+    if (returnBreakdown) {
+        return { total, douban: doubanScore, yunhe: yunheScore, award: awardScore };
+    }
+    return total;
+}
     
     function getRoleWeight(role, personName, project) {
         if(role === '导演') { let directors = project.director ? project.director.split(/[、,，]/).map(s=>s.trim()) : []; let idx = directors.findIndex(n=>n===personName); if(idx===0) return 1.0; if(idx===1) return 0.6; return 0.3; }
