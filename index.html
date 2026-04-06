@@ -1,3 +1,6 @@
+这是整合了所有修改（影人性别/年龄筛选、个人获奖选项框、排序功能、海报上传等）的完整 `index.html` 代码。
+
+```html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -102,6 +105,7 @@
         .personal-award-item { display: inline-flex; align-items: center; gap: 6px; background: white; padding: 4px 10px; border-radius: 20px; border: 1px solid #e2e8f0; }
         .remove-personal-award { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 14px; margin-left: 4px; }
         .personal-award-selector select, .personal-award-selector input { padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0; }
+        .people-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }
     </style>
 </head>
 <body>
@@ -125,8 +129,46 @@
         <div class="table-wrapper"><table class="project-table"><thead><tr><th>剧目名称</th><th>贡献分</th><th>级别</th><th>类型</th><th>集数</th><th>开机</th><th>杀青</th><th>播出日期</th><th>网播平台</th><th>台播平台</th><th>导演</th><th>编剧</th><th>男主</th><th>女主</th><th>男二</th><th>女二</th><th>出品/制作</th><th>云合最高市占率</th><th>豆瓣评分</th><th>评分人次</th><th>获奖</th><th>状态</th></tr></thead><tbody id="tableBody"></tbody></table></div>
     </div>
     <div id="peopleView" style="display:none;">
-        <div style="margin-bottom:16px;"><h2 style="font-size:18px; margin-bottom:12px;">影人排行榜</h2><div class="people-filters"><div class="filter-group"><label>职业</label><select id="peopleRoleFilter"><option value="all">全部职业</option><option value="导演">导演</option><option value="编剧">编剧</option><option value="演员">演员</option></select></div></div></div>
-        <div class="table-wrapper"><table class="people-table"><thead><tr><th>姓名</th><th>职业</th><th>综合得分</th><th>代表作数量</th></tr></thead><tbody id="peopleTableBody"></tbody></table></div>
+        <div style="margin-bottom:16px;">
+            <h2 style="font-size:18px; margin-bottom:12px;">影人排行榜</h2>
+            <div class="people-filters">
+                <div class="filter-group"><label>职业</label><select id="peopleRoleFilter">
+                    <option value="all">全部职业</option>
+                    <option value="导演">导演</option>
+                    <option value="编剧">编剧</option>
+                    <option value="演员">演员</option>
+                </select></div>
+                <div class="filter-group"><label>性别</label><select id="peopleGenderFilter">
+                    <option value="all">全部</option>
+                    <option value="男">男</option>
+                    <option value="女">女</option>
+                </select></div>
+                <div class="filter-group"><label>年龄</label><select id="peopleAgeFilter">
+                    <option value="all">全部</option>
+                    <option value="0-10">10岁以下</option>
+                    <option value="11-20">10-20岁</option>
+                    <option value="21-30">21-30岁</option>
+                    <option value="31-40">31-40岁</option>
+                    <option value="41-50">41-50岁</option>
+                    <option value="51-60">51-60岁</option>
+                    <option value="61-70">61-70岁</option>
+                    <option value="71-999">70岁以上</option>
+                </select></div>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table class="people-table">
+                <thead>
+                    <tr>
+                        <th>姓名</th>
+                        <th>职业</th>
+                        <th>综合得分</th>
+                        <th>代表作数量</th>
+                    </tr>
+                </thead>
+                <tbody id="peopleTableBody"></tbody>
+            </table>
+        </div>
     </div>
     <footer>点击行查看详情 · 长按行可编辑/删除 · 右下角+号添加项目</footer>
 </div>
@@ -235,7 +277,6 @@
     const CLOUDINARY_CLOUD_NAME = "dzklapat6";
     const CLOUDINARY_BASE_URL = "https://res.cloudinary.com/" + CLOUDINARY_CLOUD_NAME + "/image/upload/";
     
-    // ==================== 奖项系数映射 ====================
     const AWARD_COEFFICIENTS = {
         'fiveone_special': 0.50,
         'jinying_best_drama': 0.42, 'jinying_best_director': 0.28, 'jinying_best_writer': 0.25,
@@ -275,7 +316,6 @@
         'feitian_best_actress': '飞天奖·优秀女演员奖'
     };
     
-    // ==================== 个人获奖相关 ====================
     const MALE_AWARD_OPTIONS = [
         { value: 'feitian_best_actor', name: '飞天奖·优秀男演员', type: '主角', score: 3.0 },
         { value: 'jinying_best_actor', name: '金鹰奖·最佳男主角', type: '主角', score: 3.0 },
@@ -367,7 +407,28 @@
         return tags.join('');
     }
     
-    // 个人获奖相关函数
+    function getAgeGroup(birthDate) {
+        if (!birthDate) return "unknown";
+        let year = 0;
+        if (birthDate.length === 8) {
+            year = parseInt(birthDate.substring(0, 4));
+        } else {
+            let parts = birthDate.split('-');
+            if (parts.length >= 1) year = parseInt(parts[0]);
+        }
+        if (isNaN(year) || year === 0) return "unknown";
+        const currentYear = new Date().getFullYear();
+        const age = currentYear - year;
+        if (age <= 10) return "0-10";
+        if (age <= 20) return "11-20";
+        if (age <= 30) return "21-30";
+        if (age <= 40) return "31-40";
+        if (age <= 50) return "41-50";
+        if (age <= 60) return "51-60";
+        if (age <= 70) return "61-70";
+        return "71-999";
+    }
+    
     function getPersonalAwardsList(person) {
         if (!person.awards) return [];
         try { return JSON.parse(person.awards); } catch(e) { return []; }
@@ -563,7 +624,7 @@
             if (searchTerm !== "" && p.name && !p.name.toLowerCase().startsWith(searchTerm)) pass = false;
             if (pass) filtered.push(p);
         }
-        if (filtered.length === 0) { document.getElementById("tableBody").innerHTML = '<tr><td colspan="22" class="loading">暂无数据</td>'; return; }
+        if (filtered.length === 0) { document.getElementById("tableBody").innerHTML = '<table><td colspan="22" class="loading">暂无数据</td></tr>'; return; }
         let sortType = document.getElementById("sortFilter") ? document.getElementById("sortFilter").value : "default";
         const today = new Date();
         const nineMonthsAgo = new Date(); nineMonthsAgo.setMonth(today.getMonth() - 9);
@@ -801,9 +862,9 @@
         peopleData = people || [];
         peopleScores = [];
         for (let person of peopleData) {
-            let personProjects = relations.filter(r=>r.person_id===person.id);
+            let personProjects = relations.filter(r => r.person_id === person.id);
             let projectContributions = new Map();
-            let totalScore = 0, works = [], pendingWorks = [];
+            let totalScore = 0, airedScore = 0, pendingScore = 0, works = [], pendingWorks = [];
             for (let r of personProjects) {
                 let proj = r.projects;
                 if (!proj || projectContributions.has(proj.id)) continue;
@@ -818,23 +879,37 @@
                 let roleWeight = maxWeight > 0 ? maxWeight : getRoleWeight(r.role_in_project, person.name, proj);
                 let personContribution = contribution * roleWeight;
                 totalScore += personContribution;
+                if (getStatus(proj) === "已播出") {
+                    airedScore += personContribution;
+                } else {
+                    pendingScore += personContribution;
+                }
                 projectContributions.set(proj.id, true);
-                let workInfo = { name: proj.name, role: bestRole, contribution: personContribution, status: getStatus(proj), rating: proj.rating, yunhe_share: proj.yunhe_peak_share, year: proj.air_date ? proj.air_date.substring(0,4) : (proj.end_date ? proj.end_date.substring(0,4) : (proj.start_date ? proj.start_date.substring(0,4) : '')) };
+                let workInfo = {
+                    name: proj.name,
+                    role: bestRole,
+                    contribution: personContribution,
+                    status: getStatus(proj),
+                    rating: proj.rating,
+                    yunhe_share: proj.yunhe_peak_share,
+                    year: proj.air_date ? proj.air_date.substring(0, 4) : (proj.end_date ? proj.end_date.substring(0, 4) : (proj.start_date ? proj.start_date.substring(0, 4) : ''))
+                };
                 if (proj.air_date && proj.rating) works.push(workInfo);
                 else pendingWorks.push(workInfo);
             }
             let personalBonus = calculatePersonalAwardBonus(person);
             totalScore += personalBonus;
-            works.sort((a,b)=>b.contribution - a.contribution);
-            pendingWorks.sort((a,b)=>b.contribution - a.contribution);
+            let ageGroup = getAgeGroup(person.birth_date);
+            works.sort((a, b) => b.contribution - a.contribution);
+            pendingWorks.sort((a, b) => b.contribution - a.contribution);
             let mainRole = person.role;
             if (!mainRole && works.length > 0) {
                 let roleCount = {};
-                works.forEach(w=>roleCount[w.role]=(roleCount[w.role]||0)+1);
-                let topRole = Object.keys(roleCount).reduce((a,b)=>roleCount[a]>roleCount[b]?a:b, '');
+                works.forEach(w => roleCount[w.role] = (roleCount[w.role] || 0) + 1);
+                let topRole = Object.keys(roleCount).reduce((a, b) => roleCount[a] > roleCount[b] ? a : b, '');
                 if (topRole === '导演') mainRole = '导演';
                 else if (topRole === '编剧') mainRole = '编剧';
-                else if (['男主','女主','男二','女二'].includes(topRole)) mainRole = '演员';
+                else if (['男主', '女主', '男二', '女二'].includes(topRole)) mainRole = '演员';
                 else mainRole = '-';
             } else if (!mainRole && pendingWorks.length > 0) {
                 mainRole = pendingWorks[0].role;
@@ -842,32 +917,56 @@
                 else if (mainRole === '编剧') mainRole = '编剧';
                 else mainRole = '演员';
             }
-            peopleScores.push({ id: person.id, name: person.name, role: person.role, gender: person.gender, bio: person.bio, photo: person.photo, birth_date: person.birth_date, height: person.height, hometown: person.hometown, school: person.school, awards: person.awards, other_info: person.other_info, totalScore: totalScore, worksCount: works.length + pendingWorks.length, works: works.slice(0,5), pendingWorks: pendingWorks.slice(0,3), mainRole: mainRole });
+            peopleScores.push({
+                id: person.id, name: person.name, role: person.role, gender: person.gender, ageGroup: ageGroup,
+                bio: person.bio, photo: person.photo, birth_date: person.birth_date,
+                height: person.height, hometown: person.hometown, school: person.school,
+                awards: person.awards, other_info: person.other_info,
+                totalScore: totalScore, airedScore: airedScore, pendingScore: pendingScore, awardBonus: personalBonus,
+                worksCount: works.length + pendingWorks.length, works: works.slice(0, 5), pendingWorks: pendingWorks.slice(0, 3), mainRole: mainRole
+            });
         }
-        peopleScores.sort((a,b)=>b.totalScore - a.totalScore);
+        peopleScores.sort((a, b) => b.totalScore - a.totalScore);
         renderPeopleTable();
     }
     
     function renderPeopleTable() {
         let roleFilter = document.getElementById("peopleRoleFilter").value;
-        let filtered = peopleScores.filter(p => { if (roleFilter === "导演" && p.mainRole !== "导演") return false; if (roleFilter === "编剧" && p.mainRole !== "编剧") return false; if (roleFilter === "演员" && p.mainRole !== "演员") return false; return true; });
+        let genderFilter = document.getElementById("peopleGenderFilter").value;
+        let ageFilter = document.getElementById("peopleAgeFilter").value;
+        let filtered = peopleScores.filter(p => {
+            if (roleFilter === "导演" && p.mainRole !== "导演") return false;
+            if (roleFilter === "编剧" && p.mainRole !== "编剧") return false;
+            if (roleFilter === "演员" && p.mainRole !== "演员") return false;
+            if (genderFilter !== "all" && p.gender !== genderFilter) return false;
+            if (ageFilter !== "all" && p.ageGroup !== ageFilter) return false;
+            return true;
+        });
         let tbody = document.getElementById("peopleTableBody");
-        if (filtered.length === 0) { tbody.innerHTML='<tr><td colspan="4" class="loading">暂无影人数据</td></tr>'; return; }
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="loading">暂无影人数据</td</tr>';
+            return;
+        }
         let html = "";
         for (let p of filtered) {
-            html += '<tr data-person-id="' + p.id + '"><td style="font-weight:500;">' + h(p.name) + '</td><td>' + h(p.mainRole || '--') + '</td><td><span class="score-badge">' + p.totalScore.toFixed(2) + '</span></td><td>' + p.worksCount + '</td></tr>';
+            html += '<tr data-person-id="' + p.id + '">';
+            html += '<td style="font-weight:500;">' + h(p.name) + '</td>';
+            html += '<td>' + h(p.mainRole || '--') + '</td>';
+            html += '<td><span class="score-badge">' + p.totalScore.toFixed(2) + '</span></td>';
+            html += '<td>' + p.worksCount + '</td>';
+            html += '</tr>';
         }
         tbody.innerHTML = html;
         let rows = document.querySelectorAll("#peopleTableBody tr");
         for (let row of rows) {
             const id = parseInt(row.getAttribute("data-person-id"));
             row.onclick = function() { if (isLongPressTriggered) return; showPersonDetail(id); };
-            bindLongPress(row, (x,y) => showActionMenu(x,y,{type:'person',id:id}));
+            bindLongPress(row, (x, y) => showActionMenu(x, y, { type: 'person', id: id }));
         }
     }
     
     function openPersonEdit(personId) {
-        let person = peopleScores.find(p=>p.id===personId);
+        let person = peopleScores.find(p => p.id === personId);
         if (!person) return;
         currentPersonId = personId;
         document.getElementById("personName").value = person.name;
@@ -898,12 +997,12 @@
     
     async function savePersonInfo() {
         const personalAwardsJson = JSON.stringify(tempPersonalAwards);
-        let updateData = { 
+        let updateData = {
             gender: document.getElementById("personGender").value,
-            birth_date: document.getElementById("personBirthDate").value, 
-            height: document.getElementById("personHeight").value, 
-            hometown: document.getElementById("personHometown").value, 
-            school: document.getElementById("personSchool").value, 
+            birth_date: document.getElementById("personBirthDate").value,
+            height: document.getElementById("personHeight").value,
+            hometown: document.getElementById("personHometown").value,
+            school: document.getElementById("personSchool").value,
             awards: personalAwardsJson,
             other_info: document.getElementById("personOtherInfo").value,
             photo: currentPersonPhotoFile || null
@@ -914,7 +1013,7 @@
     }
     
     function showPersonDetail(personId) {
-        let person = peopleScores.find(p=>p.id===personId);
+        let person = peopleScores.find(p => p.id === personId);
         if (!person) return;
         function calculateAgeAndZodiac(birthDate) {
             if (!birthDate) return { age: null, zodiac: null };
@@ -923,7 +1022,7 @@
             let today = new Date(), age = today.getFullYear() - date.getFullYear();
             let monthDiff = today.getMonth() - date.getMonth();
             if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) age--;
-            let month = date.getMonth()+1, day = date.getDate();
+            let month = date.getMonth() + 1, day = date.getDate();
             let zodiac = "";
             if ((month===1 && day>=20) || (month===2 && day<=18)) zodiac="水瓶座";
             else if ((month===2 && day>=19) || (month===3 && day<=20)) zodiac="双鱼座";
@@ -952,7 +1051,7 @@
             for (let w of person.pendingWorks) worksHtml += `<li><strong>${h(w.name)}</strong>（${w.role}，${w.status==='已杀青'?'✅ 已杀青':(w.status==='已开机'?'🎥 拍摄中':'📝 筹备中')}，贡献 ${w.contribution.toFixed(2)}分）</li>`;
             worksHtml += '</ul></div>';
         }
-        let photoHtml = (person.photo && person.photo.trim() && person.photo!=="null") ? `<div style="width:120px; height:160px; position:relative; background:#f1f5f9; border-radius:12px; display:flex; align-items:center; justify-content:center;"><span style="position:absolute; color:#94a3b8;">📷</span><img class="poster-image" src="${h(person.photo.startsWith('http')?person.photo:CLOUDINARY_BASE_URL+person.photo)}" style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; border-radius:12px;" onload="this.style.position='relative'; this.previousElementSibling.style.display='none';" onerror="this.style.display='none';"></div>` : '<div class="poster-placeholder" style="width:120px; height:160px;">📷 暂无照片</div>';
+        let photoHtml = (person.photo && person.photo.trim() && person.photo !== "null") ? `<div style="width:120px; height:160px; position:relative; background:#f1f5f9; border-radius:12px; display:flex; align-items:center; justify-content:center;"><span style="position:absolute; color:#94a3b8;">📷</span><img class="poster-image" src="${h(person.photo.startsWith('http') ? person.photo : CLOUDINARY_BASE_URL + person.photo)}" style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; border-radius:12px;" onload="this.style.position='relative'; this.previousElementSibling.style.display='none';" onerror="this.style.display='none';"></div>` : '<div class="poster-placeholder" style="width:120px; height:160px;">📷 暂无照片</div>';
         const awardsList = getPersonalAwardsList(person);
         let awardsText = '';
         if (awardsList.length > 0) {
@@ -966,14 +1065,15 @@
             awardsText = '暂无获奖信息';
         }
         let awardsHtml = `<div class="detail-block"><strong>🎖️ 主要获奖</strong><div style="margin-top:8px;">${h(awardsText)}</div></div>`;
-        let otherInfoHtml = person.other_info ? `<div class="detail-block"><strong>ℹ️ 其他信息</strong><div style="margin-top:8px;">${h(person.other_info).replace(/\n/g,'<br>')}</div></div>` : '<div class="detail-block"><strong>ℹ️ 其他信息</strong><div>暂无其他信息</div></div>';
+        let otherInfoHtml = person.other_info ? `<div class="detail-block"><strong>ℹ️ 其他信息</strong><div style="margin-top:8px;">${h(person.other_info).replace(/\n/g, '<br>')}</div></div>` : '<div class="detail-block"><strong>ℹ️ 其他信息</strong><div>暂无其他信息</div></div>';
         let genderText = person.gender ? (person.gender === '男' ? '男' : '女') : '未设置';
-        let detailHtml = '<div style="display:flex; gap:20px; margin-bottom:16px;">' + photoHtml + '<div style="flex:1;"><div style="margin-bottom:12px;"><div style="font-size:12px; color:#64748b;">综合得分</div><div style="font-size:28px; font-weight:bold; color:#f59e0b;">' + person.totalScore.toFixed(2) + '</div></div><div><div style="font-size:12px; color:#64748b;">参与作品数</div><div style="font-size:24px; font-weight:bold;">' + person.worksCount + '</div></div>' + (infoHtml ? '<div style="margin-top:16px;">' + infoHtml + '</div>' : '') + '</div></div>';
-        detailHtml += '<div style="margin-bottom:16px;"><div style="margin-bottom:8px;"><span class="level-badge ' + (person.mainRole==='导演'?'level-S':(person.mainRole==='编剧'?'level-Aplus':'level-A')) + '">' + h(person.mainRole) + '</span> <span style="font-size:12px; color:#64748b;">| 性别：' + genderText + '</span></div><h3 style="font-size:20px;">' + h(person.name) + '</h3></div>';
+        let scoreBreakdownHtml = `<div class="score-breakdown">已播项目 ${(person.airedScore || 0).toFixed(2)} + 待播项目 ${(person.pendingScore || 0).toFixed(2)} + 个人获奖 ${(person.awardBonus || 0).toFixed(2)}</div>`;
+        let detailHtml = '<div style="display:flex; gap:20px; margin-bottom:16px;">' + photoHtml + '<div style="flex:1;"><div style="margin-bottom:12px;"><div style="font-size:12px; color:#64748b;">综合得分</div><div style="font-size:28px; font-weight:bold; color:#f59e0b;">' + person.totalScore.toFixed(2) + '</div>' + scoreBreakdownHtml + '</div><div><div style="font-size:12px; color:#64748b;">参与作品数</div><div style="font-size:24px; font-weight:bold;">' + person.worksCount + '</div></div>' + (infoHtml ? '<div style="margin-top:16px;">' + infoHtml + '</div>' : '') + '</div></div>';
+        detailHtml += '<div style="margin-bottom:16px;"><div style="margin-bottom:8px;"><span class="level-badge ' + (person.mainRole === '导演' ? 'level-S' : (person.mainRole === '编剧' ? 'level-Aplus' : 'level-A')) + '">' + h(person.mainRole) + '</span> <span style="font-size:12px; color:#64748b;">| 性别：' + genderText + '</span></div><h3 style="font-size:20px;">' + h(person.name) + '</h3></div>';
         detailHtml += worksHtml + awardsHtml + otherInfoHtml;
         document.getElementById("personDetailContent").innerHTML = detailHtml;
-        document.getElementById("editPersonFromDetailBtn").onclick = function(){ closePersonDetail(); openPersonEdit(person.id); };
-        document.getElementById("deletePersonBtn").onclick = function(){ if(confirm("删除影人《"+person.name+"》？")) deletePerson(person.id); };
+        document.getElementById("editPersonFromDetailBtn").onclick = function() { closePersonDetail(); openPersonEdit(person.id); };
+        document.getElementById("deletePersonBtn").onclick = function() { if (confirm("删除影人《" + person.name + "》？")) deletePerson(person.id); };
         document.getElementById("personDetailModal").classList.add("active");
     }
     
@@ -982,18 +1082,18 @@
     function closePersonEdit() { document.getElementById("personEditModal").classList.remove("active"); currentPersonId = null; currentPersonPhotoFile = null; }
     
     function switchTab(tab) {
-        if (tab === "projects") { document.getElementById("projectsView").style.display = "block"; document.getElementById("peopleView").style.display = "none"; document.querySelectorAll(".tab-btn").forEach(btn=>{ if(btn.dataset.tab==="projects") btn.classList.add("active"); else btn.classList.remove("active"); }); }
-        else { document.getElementById("projectsView").style.display = "none"; document.getElementById("peopleView").style.display = "block"; document.querySelectorAll(".tab-btn").forEach(btn=>{ if(btn.dataset.tab==="people") btn.classList.add("active"); else btn.classList.remove("active"); }); if (peopleScores.length === 0) loadPeopleData(); }
+        if (tab === "projects") { document.getElementById("projectsView").style.display = "block"; document.getElementById("peopleView").style.display = "none"; document.querySelectorAll(".tab-btn").forEach(btn => { if (btn.dataset.tab === "projects") btn.classList.add("active"); else btn.classList.remove("active"); }); }
+        else { document.getElementById("projectsView").style.display = "none"; document.getElementById("peopleView").style.display = "block"; document.querySelectorAll(".tab-btn").forEach(btn => { if (btn.dataset.tab === "people") btn.classList.add("active"); else btn.classList.remove("active"); }); if (peopleScores.length === 0) loadPeopleData(); }
     }
     
     function initFilters() {
-        document.getElementById("levelFilter").onchange = function(){ filters.level = this.value; renderProjectsTable(); };
-        document.getElementById("sortFilter").onchange = function(){ renderProjectsTable(); };
-        document.getElementById("typeFilter").onchange = function(){ filters.type = this.value; renderProjectsTable(); };
-        document.getElementById("platformFilter").onchange = function(){ filters.platform = this.value; renderProjectsTable(); };
-        document.getElementById("statusFilter").onchange = function(){ filters.status = this.value; renderProjectsTable(); };
-        document.getElementById("searchInput").oninput = function(){ renderProjectsTable(); };
-        document.getElementById("resetFilters").onclick = function(){
+        document.getElementById("levelFilter").onchange = function() { filters.level = this.value; renderProjectsTable(); };
+        document.getElementById("sortFilter").onchange = function() { renderProjectsTable(); };
+        document.getElementById("typeFilter").onchange = function() { filters.type = this.value; renderProjectsTable(); };
+        document.getElementById("platformFilter").onchange = function() { filters.platform = this.value; renderProjectsTable(); };
+        document.getElementById("statusFilter").onchange = function() { filters.status = this.value; renderProjectsTable(); };
+        document.getElementById("searchInput").oninput = function() { renderProjectsTable(); };
+        document.getElementById("resetFilters").onclick = function() {
             document.getElementById("levelFilter").value = "all";
             document.getElementById("typeFilter").value = "all";
             document.getElementById("platformFilter").value = "all";
@@ -1003,7 +1103,9 @@
             filters = { level: "all", type: "all", platform: "all", status: "all" };
             renderProjectsTable();
         };
-        document.getElementById("peopleRoleFilter").onchange = function(){ renderPeopleTable(); };
+        document.getElementById("peopleRoleFilter").onchange = function() { renderPeopleTable(); };
+        document.getElementById("peopleGenderFilter").onchange = function() { renderPeopleTable(); };
+        document.getElementById("peopleAgeFilter").onchange = function() { renderPeopleTable(); };
     }
     
     function initPlatformEvents() {
@@ -1011,17 +1113,18 @@
         let otherGroup = document.getElementById("otherInputGroup");
         let otherInput = document.getElementById("otherPlatformInput");
         let checkboxes = document.querySelectorAll('#platformCheckGroup input[type="checkbox"]');
-        checkboxes.forEach(cb=>{ cb.onchange = function(){ updateSelectedDisplay(); if(otherCb && otherCb.checked) otherGroup.style.display="flex"; else { otherGroup.style.display="none"; otherInput.value=""; updateSelectedDisplay(); } }; });
+        checkboxes.forEach(cb => { cb.onchange = function() { updateSelectedDisplay(); if (otherCb && otherCb.checked) otherGroup.style.display = "flex"; else { otherGroup.style.display = "none"; otherInput.value = ""; updateSelectedDisplay(); } }; });
         otherInput.oninput = updateSelectedDisplay;
         updateSelectedDisplay();
         let awardCheckboxes = document.querySelectorAll('#awardCheckGroup input[type="checkbox"]');
-        awardCheckboxes.forEach(cb=>{ cb.onchange = function(){ updateSelectedAwardsDisplay(); }; });
+        awardCheckboxes.forEach(cb => { cb.onchange = function() { updateSelectedAwardsDisplay(); }; });
         
-        // 性别变化时更新奖项下拉框
         const genderSelect = document.getElementById('personGender');
         if (genderSelect) {
+            let oldGender = genderSelect.value;
             genderSelect.onchange = function() {
-                updateAwardTypeSelect(this.value);
+                let newGender = this.value;
+                updateAwardTypeSelect(newGender);
                 if (tempPersonalAwards.length > 0) {
                     if (confirm('切换性别会清空已添加的获奖记录，是否继续？')) {
                         tempPersonalAwards = [];
@@ -1031,6 +1134,7 @@
                         updateAwardTypeSelect(oldGender);
                     }
                 }
+                oldGender = genderSelect.value;
             };
         }
     }
@@ -1121,21 +1225,21 @@
     }
     
     function bindEvents() {
-        document.getElementById("addBtn").onclick = function(){ openEdit(null); };
+        document.getElementById("addBtn").onclick = function() { openEdit(null); };
         document.getElementById("closeEditModalBtn").onclick = closeEdit;
         document.getElementById("saveBtn").onclick = saveProject;
         document.getElementById("closeDetailBtn").onclick = closeDetail;
         document.getElementById("closePersonDetailBtn").onclick = closePersonDetail;
         document.getElementById("closePersonEditBtn").onclick = closePersonEdit;
         document.getElementById("savePersonBtn").onclick = savePersonInfo;
-        document.getElementById("editModal").onclick = function(e){ if(e.target===document.getElementById("editModal")) closeEdit(); };
-        document.getElementById("detailModal").onclick = function(e){ if(e.target===document.getElementById("detailModal")) closeDetail(); };
-        document.getElementById("personDetailModal").onclick = function(e){ if(e.target===document.getElementById("personDetailModal")) closePersonDetail(); };
-        document.getElementById("personEditModal").onclick = function(e){ if(e.target===document.getElementById("personEditModal")) closePersonEdit(); };
-        document.querySelectorAll(".tab-btn").forEach(btn=>{ btn.onclick = function(){ switchTab(this.getAttribute("data-tab")); }; });
-        document.getElementById("menuEditBtn").onclick = function() { if(currentActionTarget) { let {type,id}=currentActionTarget; hideActionMenu(); if(type==='project') openEdit(id); else openPersonEdit(id); } };
-        document.getElementById("menuDeleteBtn").onclick = function() { if(currentActionTarget) { let {type,id}=currentActionTarget; hideActionMenu(); if(type==='project') { if(confirm("确定要删除此项目吗？")) deleteProject(id); } else { if(confirm("确定要删除此影人吗？")) deletePerson(id); } } };
-        document.addEventListener("click", function(e){ if(!e.target.closest("#actionMenu")) hideActionMenu(); });
+        document.getElementById("editModal").onclick = function(e) { if (e.target === document.getElementById("editModal")) closeEdit(); };
+        document.getElementById("detailModal").onclick = function(e) { if (e.target === document.getElementById("detailModal")) closeDetail(); };
+        document.getElementById("personDetailModal").onclick = function(e) { if (e.target === document.getElementById("personDetailModal")) closePersonDetail(); };
+        document.getElementById("personEditModal").onclick = function(e) { if (e.target === document.getElementById("personEditModal")) closePersonEdit(); };
+        document.querySelectorAll(".tab-btn").forEach(btn => { btn.onclick = function() { switchTab(this.getAttribute("data-tab")); }; });
+        document.getElementById("menuEditBtn").onclick = function() { if (currentActionTarget) { let { type, id } = currentActionTarget; hideActionMenu(); if (type === 'project') openEdit(id); else openPersonEdit(id); } };
+        document.getElementById("menuDeleteBtn").onclick = function() { if (currentActionTarget) { let { type, id } = currentActionTarget; hideActionMenu(); if (type === 'project') { if (confirm("确定要删除此项目吗？")) deleteProject(id); } else { if (confirm("确定要删除此影人吗？")) deletePerson(id); } } };
+        document.addEventListener("click", function(e) { if (!e.target.closest("#actionMenu")) hideActionMenu(); });
         
         const addAwardBtn = document.getElementById('addPersonalAwardBtn');
         if (addAwardBtn) { addAwardBtn.onclick = addPersonalAward; }
@@ -1151,3 +1255,4 @@
 </script>
 </body>
 </html>
+```
