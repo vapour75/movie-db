@@ -99,6 +99,9 @@
         .action-menu button { width: 100%; padding: 10px 16px; border: none; background: white; text-align: left; cursor: pointer; }
         .action-menu button:hover { background: #f1f5f9; }
         .menu-delete { color: #ef4444; }
+        .personal-award-item { display: inline-flex; align-items: center; gap: 6px; background: white; padding: 4px 10px; border-radius: 20px; border: 1px solid #e2e8f0; }
+        .remove-personal-award { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 14px; margin-left: 4px; }
+        .personal-award-selector select, .personal-award-selector input { padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0; }
     </style>
 </head>
 <body>
@@ -123,7 +126,7 @@
     </div>
     <div id="peopleView" style="display:none;">
         <div style="margin-bottom:16px;"><h2 style="font-size:18px; margin-bottom:12px;">影人排行榜</h2><div class="people-filters"><div class="filter-group"><label>职业</label><select id="peopleRoleFilter"><option value="all">全部职业</option><option value="导演">导演</option><option value="编剧">编剧</option><option value="演员">演员</option></select></div></div></div>
-        <div class="table-wrapper"><table class="people-table"><thead><tr><th>姓名</th><th>职业</th><th>综合得分</th><th>代表作数量</th></tr></thead><tbody id="peopleTableBody"></tbody></table></div>
+        <div class="table-wrapper"><table class="people-table"><thead>汽<th>姓名</th><th>职业</th><th>综合得分</th><th>代表作数量</th></tr></thead><tbody id="peopleTableBody"></tbody></table></div>
     </div>
     <footer>点击行查看详情 · 长按行可编辑/删除 · 右下角+号添加项目</footer>
 </div>
@@ -180,12 +183,39 @@
 
 <!-- 影人编辑模态框 -->
 <div id="personEditModal" class="modal-overlay"><div class="modal-drawer"><div style="display:flex; justify-content:space-between; margin-bottom:16px;"><span id="personEditTitle" style="font-size:18px; font-weight:bold;">编辑影人</span><button id="closePersonEditBtn" style="background:none; border:none; font-size:24px;">&times;</button></div>
-<div class="form-group"><label>姓名</label><input type="text" id="personName" readonly style="background:#f1f5f9;"></div>
-<div class="form-group"><label>出生年月日</label><input type="text" id="personBirthDate" placeholder="如：19901215 或 1990-12-15"></div>
-<div class="form-group"><label>身高</label><input type="text" id="personHeight" placeholder="如：175cm"></div>
-<div class="form-group"><label>籍贯</label><input type="text" id="personHometown" placeholder="如：北京"></div>
-<div class="form-group"><label>毕业院校</label><input type="text" id="personSchool" placeholder="毕业院校"></div>
-<div class="form-group"><label>主要获奖</label><textarea id="personAwards" rows="3" placeholder="每行一个奖项"></textarea></div>
+<div class="form-row">
+    <div class="form-group"><label>姓名</label><input type="text" id="personName" readonly style="background:#f1f5f9;"></div>
+    <div class="form-group"><label>性别</label><select id="personGender">
+        <option value="">-- 请选择 --</option>
+        <option value="男">男</option>
+        <option value="女">女</option>
+    </select></div>
+</div>
+<div class="form-row">
+    <div class="form-group"><label>出生年月日</label><input type="text" id="personBirthDate" placeholder="如：19901215 或 1990-12-15"></div>
+    <div class="form-group"><label>身高</label><input type="text" id="personHeight" placeholder="如：175cm"></div>
+</div>
+<div class="form-row">
+    <div class="form-group"><label>籍贯</label><input type="text" id="personHometown" placeholder="如：北京"></div>
+    <div class="form-group"><label>毕业院校</label><input type="text" id="personSchool" placeholder="毕业院校"></div>
+</div>
+<div class="form-group">
+    <label>🏆 个人获奖（可多选，同一奖项多届可多次添加）</label>
+    <div class="personal-award-selector" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px;">
+        <select id="personalAwardType" style="flex:2; padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0; background: white;">
+            <option value="">-- 请先选择性别 --</option>
+        </select>
+        <input type="text" id="personalAwardYear" placeholder="年份（选填）" style="flex:1; padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
+        <input type="text" id="personalAwardWork" placeholder="作品（选填）" style="flex:2; padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
+        <button type="button" id="addPersonalAwardBtn" style="padding: 8px 16px; background: #1e293b; color: white; border: none; border-radius: 10px; cursor: pointer;">+ 添加</button>
+    </div>
+    <div id="personalAwardsList" style="display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; background: #f8fafc; border-radius: 12px; min-height: 60px;">
+        <span style="color:#94a3b8; font-size:12px;">请先选择性别</span>
+    </div>
+    <div style="margin-top: 8px; font-size: 11px; color: #64748b;">
+        💡 同一奖项在不同年份获奖可多次添加，系统将自动累加分数（主角奖+3.0，配角奖+1.5）
+    </div>
+</div>
 <div class="form-group"><label>其他信息</label><textarea id="personOtherInfo" rows="3" placeholder="如：爱好、语言等"></textarea></div>
 <div class="upload-container" style="margin: 16px 0;"><div id="personUploadArea" class="upload-area"><div style="font-size: 32px; margin-bottom: 8px;">📷</div><div style="font-size: 12px; color: #64748b;">点击上传影人照片（支持手机相册）</div><input type="file" id="personImageUpload" accept="image/*" style="display: none;"></div><div id="personImagePreview" style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap;"></div></div>
 <button class="btn-submit" id="savePersonBtn">保存修改</button></div></div>
@@ -205,6 +235,7 @@
     const CLOUDINARY_CLOUD_NAME = "dzklapat6";
     const CLOUDINARY_BASE_URL = "https://res.cloudinary.com/" + CLOUDINARY_CLOUD_NAME + "/image/upload/";
     
+    // ==================== 奖项系数映射 ====================
     const AWARD_COEFFICIENTS = {
         'fiveone_special': 0.50,
         'jinying_best_drama': 0.42, 'jinying_best_director': 0.28, 'jinying_best_writer': 0.25,
@@ -219,13 +250,10 @@
     };
     
     const AWARD_SHORT = {
-        'fiveone_special': '五',
-        'jinying_best_drama': '鹰', 'jinying_best_director': '鹰', 'jinying_best_writer': '鹰',
-        'jinying_best_actor': '鹰', 'jinying_best_actress': '鹰',
-        'jinying_best_sup_actor': '鹰', 'jinying_best_sup_actress': '鹰',
+        'fiveone_special': '五', 'jinying_best_drama': '鹰', 'jinying_best_director': '鹰', 'jinying_best_writer': '鹰',
+        'jinying_best_actor': '鹰', 'jinying_best_actress': '鹰', 'jinying_best_sup_actor': '鹰', 'jinying_best_sup_actress': '鹰',
         'baiyulan_best_drama': '白', 'baiyulan_best_director': '白', 'baiyulan_best_writer': '白',
-        'baiyulan_best_actor': '白', 'baiyulan_best_actress': '白',
-        'baiyulan_best_sup_actor': '白', 'baiyulan_best_sup_actress': '白',
+        'baiyulan_best_actor': '白', 'baiyulan_best_actress': '白', 'baiyulan_best_sup_actor': '白', 'baiyulan_best_sup_actress': '白',
         'baiyulan_best_cinematography': '白', 'baiyulan_best_art_direction': '白',
         'feitian_best_drama': '飞', 'feitian_best_director': '飞', 'feitian_best_writer': '飞',
         'feitian_best_actor': '飞', 'feitian_best_actress': '飞'
@@ -247,6 +275,39 @@
         'feitian_best_actress': '飞天奖·优秀女演员奖'
     };
     
+    // ==================== 个人获奖相关 ====================
+    const MALE_AWARD_OPTIONS = [
+        { value: 'feitian_best_actor', name: '飞天奖·优秀男演员', type: '主角', score: 3.0 },
+        { value: 'jinying_best_actor', name: '金鹰奖·最佳男主角', type: '主角', score: 3.0 },
+        { value: 'baiyulan_best_actor', name: '白玉兰奖·最佳男主角', type: '主角', score: 3.0 },
+        { value: 'jinying_best_sup_actor', name: '金鹰奖·最佳男配角', type: '配角', score: 1.5 },
+        { value: 'baiyulan_best_sup_actor', name: '白玉兰奖·最佳男配角', type: '配角', score: 1.5 }
+    ];
+    
+    const FEMALE_AWARD_OPTIONS = [
+        { value: 'feitian_best_actress', name: '飞天奖·优秀女演员', type: '主角', score: 3.0 },
+        { value: 'jinying_best_actress', name: '金鹰奖·最佳女主角', type: '主角', score: 3.0 },
+        { value: 'baiyulan_best_actress', name: '白玉兰奖·最佳女主角', type: '主角', score: 3.0 },
+        { value: 'jinying_best_sup_actress', name: '金鹰奖·最佳女配角', type: '配角', score: 1.5 },
+        { value: 'baiyulan_best_sup_actress', name: '白玉兰奖·最佳女配角', type: '配角', score: 1.5 }
+    ];
+    
+    const PERSONAL_AWARD_SCORES = {
+        'feitian_best_actor': 3.0, 'feitian_best_actress': 3.0,
+        'jinying_best_actor': 3.0, 'jinying_best_actress': 3.0,
+        'baiyulan_best_actor': 3.0, 'baiyulan_best_actress': 3.0,
+        'jinying_best_sup_actor': 1.5, 'jinying_best_sup_actress': 1.5,
+        'baiyulan_best_sup_actor': 1.5, 'baiyulan_best_sup_actress': 1.5
+    };
+    
+    const PERSONAL_AWARD_NAMES = {
+        'feitian_best_actor': '飞天奖·优秀男演员', 'feitian_best_actress': '飞天奖·优秀女演员',
+        'jinying_best_actor': '金鹰奖·最佳男主角', 'jinying_best_actress': '金鹰奖·最佳女主角',
+        'baiyulan_best_actor': '白玉兰奖·最佳男主角', 'baiyulan_best_actress': '白玉兰奖·最佳女主角',
+        'jinying_best_sup_actor': '金鹰奖·最佳男配角', 'jinying_best_sup_actress': '金鹰奖·最佳女配角',
+        'baiyulan_best_sup_actor': '白玉兰奖·最佳男配角', 'baiyulan_best_sup_actress': '白玉兰奖·最佳女配角'
+    };
+    
     let longPressTimer, isLongPressTriggered = false, currentActionTarget = null;
     let projects = [], peopleData = [], peopleScores = [];
     let currentId = null, currentPersonId = null;
@@ -254,7 +315,8 @@
     let currentTab = "projects";
     let currentPersonPhotoFile = null;
     let currentUploadFiles = [];
-
+    let tempPersonalAwards = [];
+    
     function getPosterUrl(poster) { if(!poster) return null; if(poster.startsWith('http')) return poster; return CLOUDINARY_BASE_URL + poster; }
     function h(s) { if(!s) return ''; return s.replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
     function getStatus(p) { if(p.air_date && p.air_date!=="") return "已播出"; if(p.end_date && p.end_date!=="") return "已杀青"; if(p.start_date && p.start_date!=="") return "已开机"; return "待开机"; }
@@ -303,6 +365,117 @@
         if (hasFei) tags.push('<span class="award-tag award-tag-fei">飞</span>');
         if (hasYing) tags.push('<span class="award-tag award-tag-ying">鹰</span>');
         return tags.join('');
+    }
+    
+    // 个人获奖相关函数
+    function getPersonalAwardsList(person) {
+        if (!person.awards) return [];
+        try { return JSON.parse(person.awards); } catch(e) { return []; }
+    }
+    
+    function calculatePersonalAwardBonus(person) {
+        const awardsList = getPersonalAwardsList(person);
+        let total = 0;
+        for (let award of awardsList) {
+            total += PERSONAL_AWARD_SCORES[award.type] || 0;
+        }
+        return total;
+    }
+    
+    function getAwardOptionsByGender(gender) {
+        if (gender === '男') return MALE_AWARD_OPTIONS;
+        if (gender === '女') return FEMALE_AWARD_OPTIONS;
+        return [];
+    }
+    
+    function updateAwardTypeSelect(gender) {
+        const select = document.getElementById('personalAwardType');
+        if (!select) return;
+        const options = getAwardOptionsByGender(gender);
+        select.innerHTML = '<option value="">-- 选择奖项 --</option>';
+        if (options.length === 0) {
+            select.innerHTML = '<option value="">-- 请先选择性别 --</option>';
+            return;
+        }
+        const protagonistOptions = options.filter(opt => opt.type === '主角');
+        const supportingOptions = options.filter(opt => opt.type === '配角');
+        if (protagonistOptions.length > 0) {
+            const group = document.createElement('optgroup');
+            group.label = '最佳主角奖';
+            protagonistOptions.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt.value;
+                option.textContent = `${opt.name} (+${opt.score})`;
+                group.appendChild(option);
+            });
+            select.appendChild(group);
+        }
+        if (supportingOptions.length > 0) {
+            const group = document.createElement('optgroup');
+            group.label = '最佳配角奖';
+            supportingOptions.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt.value;
+                option.textContent = `${opt.name} (+${opt.score})`;
+                group.appendChild(option);
+            });
+            select.appendChild(group);
+        }
+    }
+    
+    function renderPersonalAwardsList(awardsList) {
+        const container = document.getElementById('personalAwardsList');
+        if (!container) return;
+        if (!awardsList || awardsList.length === 0) {
+            container.innerHTML = '<span style="color:#94a3b8; font-size:12px;">暂无获奖，请点击「+ 添加」</span>';
+            return;
+        }
+        let html = '';
+        for (let i = 0; i < awardsList.length; i++) {
+            const award = awardsList[i];
+            const awardName = PERSONAL_AWARD_NAMES[award.type] || award.type;
+            const yearText = award.year ? ` (${award.year})` : '';
+            const workText = award.work ? `《${award.work}》` : '';
+            const score = PERSONAL_AWARD_SCORES[award.type] || 0;
+            html += `<div class="personal-award-item" data-index="${i}"><span style="font-size:12px;">🏆 ${awardName}${yearText}${workText} <span style="color:#3ccef7;">(+${score})</span></span><button type="button" class="remove-personal-award" data-index="${i}">×</button></div>`;
+        }
+        container.innerHTML = html;
+        document.querySelectorAll('.remove-personal-award').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const index = parseInt(btn.dataset.index);
+                removePersonalAward(index);
+            };
+        });
+    }
+    
+    function getCurrentPersonalAwards() { return tempPersonalAwards; }
+    function savePersonalAwardsToMemory(awards) { tempPersonalAwards = [...awards]; }
+    function loadPersonalAwardsToMemory(awardsList) { tempPersonalAwards = awardsList ? [...awardsList] : []; renderPersonalAwardsList(tempPersonalAwards); }
+    
+    function addPersonalAward() {
+        const typeSelect = document.getElementById('personalAwardType');
+        const awardType = typeSelect.value;
+        const year = document.getElementById('personalAwardYear').value.trim();
+        const work = document.getElementById('personalAwardWork').value.trim();
+        if (!awardType) { alert('请选择奖项类型'); return; }
+        const newAward = { type: awardType };
+        if (year) newAward.year = year;
+        if (work) newAward.work = work;
+        let currentAwards = getCurrentPersonalAwards();
+        currentAwards.push(newAward);
+        savePersonalAwardsToMemory(currentAwards);
+        renderPersonalAwardsList(currentAwards);
+        typeSelect.value = '';
+        document.getElementById('personalAwardYear').value = '';
+        document.getElementById('personalAwardWork').value = '';
+    }
+    
+    function removePersonalAward(index) {
+        let currentAwards = getCurrentPersonalAwards();
+        currentAwards.splice(index, 1);
+        savePersonalAwardsToMemory(currentAwards);
+        renderPersonalAwardsList(currentAwards);
     }
     
     function getContributionScore(p, returnBreakdown = false) {
@@ -356,9 +529,7 @@
         if (!awardsStr || awardsStr === "") { updateSelectedAwardsDisplay(); return; }
         let awards = [];
         try { awards = JSON.parse(awardsStr); } catch(e) { awards = awardsStr.split(','); }
-        for (let key of awards) {
-            for (let cb of checkboxes) if (cb.value === key.trim()) { cb.checked = true; break; }
-        }
+        for (let key of awards) { for (let cb of checkboxes) if (cb.value === key.trim()) { cb.checked = true; break; } }
         updateSelectedAwardsDisplay();
     }
     
@@ -392,25 +563,17 @@
             if (searchTerm !== "" && p.name && !p.name.toLowerCase().startsWith(searchTerm)) pass = false;
             if (pass) filtered.push(p);
         }
-        if (filtered.length === 0) { document.getElementById("tableBody").innerHTML = '<tr><td colspan="22" class="loading">暂无数据</td></tr>'; return; }
-        
+        if (filtered.length === 0) { document.getElementById("tableBody").innerHTML = '<tr><td colspan="22" class="loading">暂无数据</td>'; return; }
         let sortType = document.getElementById("sortFilter") ? document.getElementById("sortFilter").value : "default";
         const today = new Date();
         const nineMonthsAgo = new Date(); nineMonthsAgo.setMonth(today.getMonth() - 9);
         function parseDate(dateStr) { if(!dateStr) return 0; if(dateStr.length===8){ const year=parseInt(dateStr.substring(0,4)), month=parseInt(dateStr.substring(4,6))-1, day=parseInt(dateStr.substring(6,8)); return new Date(year,month,day).getTime(); } return new Date(dateStr).getTime(); }
         function getSortGroup(p) { const status=getStatus(p); const airDate=p.air_date?parseDate(p.air_date):0; if(status==="已播出"){ if(airDate>=nineMonthsAgo.getTime()) return 1; else return 5; } else if(status==="已开机") return 2; else if(status==="待开机") return 3; else if(status==="已杀青") return 4; return 4; }
         function getSortDate(p) { const status=getStatus(p); if(status==="已播出") return parseDate(p.air_date); else if(status==="已开机") return parseDate(p.start_date); else if(status==="已杀青") return parseDate(p.end_date); else return p.created_at?new Date(p.created_at).getTime():0; }
-        
-        if (sortType === "contribution_desc") {
-            filtered.sort((a,b) => getContributionScore(b) - getContributionScore(a));
-        } else if (sortType === "rating_desc") {
-            filtered.sort((a,b) => (parseFloat(b.rating)||0) - (parseFloat(a.rating)||0));
-        } else if (sortType === "yunhe_desc") {
-            filtered.sort((a,b) => (parseFloat(b.yunhe_peak_share)||0) - (parseFloat(a.yunhe_peak_share)||0));
-        } else if (sortType === "air_date_desc" || sortType === "default") {
-            filtered.sort((a,b) => { const ga=getSortGroup(a), gb=getSortGroup(b); if(ga!==gb) return ga-gb; return getSortDate(b)-getSortDate(a); });
-        }
-        
+        if (sortType === "contribution_desc") { filtered.sort((a,b) => getContributionScore(b) - getContributionScore(a)); }
+        else if (sortType === "rating_desc") { filtered.sort((a,b) => (parseFloat(b.rating)||0) - (parseFloat(a.rating)||0)); }
+        else if (sortType === "yunhe_desc") { filtered.sort((a,b) => (parseFloat(b.yunhe_peak_share)||0) - (parseFloat(a.yunhe_peak_share)||0)); }
+        else { filtered.sort((a,b) => { const ga=getSortGroup(a), gb=getSortGroup(b); if(ga!==gb) return ga-gb; return getSortDate(b)-getSortDate(a); }); }
         let html = "";
         for (let p of filtered) {
             let status = getStatus(p), contribution = getContributionScore(p);
@@ -660,6 +823,8 @@
                 if (proj.air_date && proj.rating) works.push(workInfo);
                 else pendingWorks.push(workInfo);
             }
+            let personalBonus = calculatePersonalAwardBonus(person);
+            totalScore += personalBonus;
             works.sort((a,b)=>b.contribution - a.contribution);
             pendingWorks.sort((a,b)=>b.contribution - a.contribution);
             let mainRole = person.role;
@@ -677,7 +842,7 @@
                 else if (mainRole === '编剧') mainRole = '编剧';
                 else mainRole = '演员';
             }
-            peopleScores.push({ id: person.id, name: person.name, role: person.role, bio: person.bio, photo: person.photo, birth_date: person.birth_date, height: person.height, hometown: person.hometown, school: person.school, awards: person.awards, other_info: person.other_info, totalScore: totalScore, worksCount: works.length + pendingWorks.length, works: works.slice(0,5), pendingWorks: pendingWorks.slice(0,3), mainRole: mainRole });
+            peopleScores.push({ id: person.id, name: person.name, role: person.role, gender: person.gender, bio: person.bio, photo: person.photo, birth_date: person.birth_date, height: person.height, hometown: person.hometown, school: person.school, awards: person.awards, other_info: person.other_info, totalScore: totalScore, worksCount: works.length + pendingWorks.length, works: works.slice(0,5), pendingWorks: pendingWorks.slice(0,3), mainRole: mainRole });
         }
         peopleScores.sort((a,b)=>b.totalScore - a.totalScore);
         renderPeopleTable();
@@ -706,12 +871,15 @@
         if (!person) return;
         currentPersonId = personId;
         document.getElementById("personName").value = person.name;
+        document.getElementById("personGender").value = person.gender || "";
         document.getElementById("personBirthDate").value = person.birth_date || "";
         document.getElementById("personHeight").value = person.height || "";
         document.getElementById("personHometown").value = person.hometown || "";
         document.getElementById("personSchool").value = person.school || "";
-        document.getElementById("personAwards").value = person.awards || "";
         document.getElementById("personOtherInfo").value = person.other_info || "";
+        updateAwardTypeSelect(person.gender || "");
+        const awardsList = getPersonalAwardsList(person);
+        loadPersonalAwardsToMemory(awardsList);
         currentPersonPhotoFile = person.photo || null;
         const previewContainer = document.getElementById('personImagePreview');
         if (previewContainer) {
@@ -729,7 +897,17 @@
     }
     
     async function savePersonInfo() {
-        let updateData = { birth_date: document.getElementById("personBirthDate").value, height: document.getElementById("personHeight").value, hometown: document.getElementById("personHometown").value, school: document.getElementById("personSchool").value, awards: document.getElementById("personAwards").value, other_info: document.getElementById("personOtherInfo").value, photo: currentPersonPhotoFile || null };
+        const personalAwardsJson = JSON.stringify(tempPersonalAwards);
+        let updateData = { 
+            gender: document.getElementById("personGender").value,
+            birth_date: document.getElementById("personBirthDate").value, 
+            height: document.getElementById("personHeight").value, 
+            hometown: document.getElementById("personHometown").value, 
+            school: document.getElementById("personSchool").value, 
+            awards: personalAwardsJson,
+            other_info: document.getElementById("personOtherInfo").value,
+            photo: currentPersonPhotoFile || null
+        };
         let { error } = await client.from("people").update(updateData).eq("id", currentPersonId);
         if (error) alert("保存失败: " + error.message);
         else { alert("保存成功"); document.getElementById("personEditModal").classList.remove("active"); await loadPeopleData(); showPersonDetail(currentPersonId); }
@@ -775,10 +953,23 @@
             worksHtml += '</ul></div>';
         }
         let photoHtml = (person.photo && person.photo.trim() && person.photo!=="null") ? `<div style="width:120px; height:160px; position:relative; background:#f1f5f9; border-radius:12px; display:flex; align-items:center; justify-content:center;"><span style="position:absolute; color:#94a3b8;">📷</span><img class="poster-image" src="${h(person.photo.startsWith('http')?person.photo:CLOUDINARY_BASE_URL+person.photo)}" style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; border-radius:12px;" onload="this.style.position='relative'; this.previousElementSibling.style.display='none';" onerror="this.style.display='none';"></div>` : '<div class="poster-placeholder" style="width:120px; height:160px;">📷 暂无照片</div>';
-        let awardsHtml = person.awards ? `<div class="detail-block"><strong>🎖️ 主要获奖</strong><div style="margin-top:8px;">${h(person.awards).replace(/\n/g,'<br>')}</div></div>` : '<div class="detail-block"><strong>🎖️ 主要获奖</strong><div>暂无获奖信息</div></div>';
+        const awardsList = getPersonalAwardsList(person);
+        let awardsText = '';
+        if (awardsList.length > 0) {
+            awardsText = awardsList.map(a => {
+                const name = PERSONAL_AWARD_NAMES[a.type] || a.type;
+                const year = a.year ? `（${a.year}）` : '';
+                const work = a.work ? `《${a.work}》` : '';
+                return `${name}${year}${work}`;
+            }).join('；');
+        } else {
+            awardsText = '暂无获奖信息';
+        }
+        let awardsHtml = `<div class="detail-block"><strong>🎖️ 主要获奖</strong><div style="margin-top:8px;">${h(awardsText)}</div></div>`;
         let otherInfoHtml = person.other_info ? `<div class="detail-block"><strong>ℹ️ 其他信息</strong><div style="margin-top:8px;">${h(person.other_info).replace(/\n/g,'<br>')}</div></div>` : '<div class="detail-block"><strong>ℹ️ 其他信息</strong><div>暂无其他信息</div></div>';
+        let genderText = person.gender ? (person.gender === '男' ? '男' : '女') : '未设置';
         let detailHtml = '<div style="display:flex; gap:20px; margin-bottom:16px;">' + photoHtml + '<div style="flex:1;"><div style="margin-bottom:12px;"><div style="font-size:12px; color:#64748b;">综合得分</div><div style="font-size:28px; font-weight:bold; color:#f59e0b;">' + person.totalScore.toFixed(2) + '</div></div><div><div style="font-size:12px; color:#64748b;">参与作品数</div><div style="font-size:24px; font-weight:bold;">' + person.worksCount + '</div></div>' + (infoHtml ? '<div style="margin-top:16px;">' + infoHtml + '</div>' : '') + '</div></div>';
-        detailHtml += '<div style="margin-bottom:16px;"><div style="margin-bottom:8px;"><span class="level-badge ' + (person.mainRole==='导演'?'level-S':(person.mainRole==='编剧'?'level-Aplus':'level-A')) + '">' + h(person.mainRole) + '</span></div><h3 style="font-size:20px;">' + h(person.name) + '</h3></div>';
+        detailHtml += '<div style="margin-bottom:16px;"><div style="margin-bottom:8px;"><span class="level-badge ' + (person.mainRole==='导演'?'level-S':(person.mainRole==='编剧'?'level-Aplus':'level-A')) + '">' + h(person.mainRole) + '</span> <span style="font-size:12px; color:#64748b;">| 性别：' + genderText + '</span></div><h3 style="font-size:20px;">' + h(person.name) + '</h3></div>';
         detailHtml += worksHtml + awardsHtml + otherInfoHtml;
         document.getElementById("personDetailContent").innerHTML = detailHtml;
         document.getElementById("editPersonFromDetailBtn").onclick = function(){ closePersonDetail(); openPersonEdit(person.id); };
@@ -825,6 +1016,23 @@
         updateSelectedDisplay();
         let awardCheckboxes = document.querySelectorAll('#awardCheckGroup input[type="checkbox"]');
         awardCheckboxes.forEach(cb=>{ cb.onchange = function(){ updateSelectedAwardsDisplay(); }; });
+        
+        // 性别变化时更新奖项下拉框
+        const genderSelect = document.getElementById('personGender');
+        if (genderSelect) {
+            genderSelect.onchange = function() {
+                updateAwardTypeSelect(this.value);
+                if (tempPersonalAwards.length > 0) {
+                    if (confirm('切换性别会清空已添加的获奖记录，是否继续？')) {
+                        tempPersonalAwards = [];
+                        renderPersonalAwardsList(tempPersonalAwards);
+                    } else {
+                        genderSelect.value = oldGender;
+                        updateAwardTypeSelect(oldGender);
+                    }
+                }
+            };
+        }
     }
     
     function initPersonImageUpload() {
@@ -928,6 +1136,10 @@
         document.getElementById("menuEditBtn").onclick = function() { if(currentActionTarget) { let {type,id}=currentActionTarget; hideActionMenu(); if(type==='project') openEdit(id); else openPersonEdit(id); } };
         document.getElementById("menuDeleteBtn").onclick = function() { if(currentActionTarget) { let {type,id}=currentActionTarget; hideActionMenu(); if(type==='project') { if(confirm("确定要删除此项目吗？")) deleteProject(id); } else { if(confirm("确定要删除此影人吗？")) deletePerson(id); } } };
         document.addEventListener("click", function(e){ if(!e.target.closest("#actionMenu")) hideActionMenu(); });
+        
+        const addAwardBtn = document.getElementById('addPersonalAwardBtn');
+        if (addAwardBtn) { addAwardBtn.onclick = addPersonalAward; }
+        
         initImageUpload();
     }
     
