@@ -923,11 +923,11 @@ function showPersonDetail(personId) {
     let ageInfo = calculateAgeAndBirth(person.birth_date);
     
     // 照片HTML
-    let photoHtml = (person.photo && person.photo.trim() && person.photo !== "null") ? 
-        `<div style="width:120px; height:160px; border-radius:12px; overflow:hidden; background:#f1f5f9; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
-            <img src="${h(person.photo.startsWith('http') ? person.photo : CLOUDINARY_BASE_URL + person.photo)}" style="width:100%; height:100%; object-fit:cover; cursor:pointer;" onclick="openImageModal('${h(person.photo.startsWith('http') ? person.photo : CLOUDINARY_BASE_URL + person.photo)}')" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\"width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#94a3b8;\">📷</div>'">
-        </div>` : 
-        `<div style="width:120px; height:160px; background:#f1f5f9; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#94a3b8;">📷 暂无照片</div>`;
+let photoHtml = (person.photo && person.photo.trim() && person.photo !== "null") ? 
+    `<div style="width:120px; height:160px; border-radius:12px; overflow:hidden; background:#f1f5f9; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+        <img src="${h(person.photo.startsWith('http') ? person.photo : CLOUDINARY_BASE_URL + person.photo)}" style="width:100%; height:100%; object-fit:cover; cursor:pointer;" onclick='openImageModal("${h(person.photo.startsWith('http') ? person.photo : CLOUDINARY_BASE_URL + person.photo)}")' onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\"width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#94a3b8;\">📷</div>'">
+    </div>` : 
+    `<div style="width:120px; height:160px; background:#f1f5f9; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#94a3b8;">📷 暂无照片</div>`;
     
     // 年龄显示
     let ageDisplay = '';
