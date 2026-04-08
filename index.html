@@ -86,9 +86,9 @@
         .award-tag-bai { background: #e0e7ff; color: #3730a3; }
         .award-tag-fei { background: #fef3c7; color: #b45309; }
         .award-tag-ying { background: #fee2e2; color: #991b1b; }
-        .poster-image { width: 120px; height: 160px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #f1f5f9; cursor: pointer; transition: transform 0.2s; }
+        .poster-image { width: 160px; height: 213px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #f1f5f9; cursor: pointer; transition: transform 0.2s; }
         .poster-image:hover { transform: scale(1.02); }
-        .poster-placeholder { width: 120px; height: 160px; background: #f1f5f9; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 12px; text-align: center; cursor: pointer; }
+        .poster-placeholder { width: 160px; height: 213px; background: #f1f5f9; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 12px; text-align: center; cursor: pointer; }
         .poster-container { display: flex; gap: 20px; margin-bottom: 16px; flex-wrap: wrap; }
         .upload-container { margin: 16px 0; }
         .upload-area { border: 2px dashed #cbd5e1; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; background: #f8fafc; }
@@ -108,6 +108,31 @@
         .image-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 1000; cursor: pointer; visibility: hidden; opacity: 0; transition: 0.2s; }
         .image-modal.active { visibility: visible; opacity: 1; }
         .image-modal img { max-width: 90%; max-height: 90%; object-fit: contain; border-radius: 8px; }
+        
+        /* 优化后的详情页样式 */
+        .detail-header { display: flex; gap: 24px; margin-bottom: 24px; flex-wrap: wrap; }
+        .detail-poster { flex-shrink: 0; }
+        .detail-info { flex: 1; min-width: 200px; }
+        .detail-name { font-size: 28px; font-weight: bold; color: #1e293b; margin-bottom: 16px; }
+        .detail-stats { display: flex; gap: 40px; margin-bottom: 16px; flex-wrap: wrap; }
+        .detail-stat-item { text-align: left; }
+        .detail-stat-label { font-size: 12px; color: #64748b; margin-bottom: 4px; }
+        .detail-stat-value { font-size: 32px; font-weight: bold; }
+        .detail-stat-value.score { color: #f59e0b; }
+        .detail-stat-value.count { color: #1e293b; }
+        .detail-age-section { margin-top: 16px; }
+        .detail-age { font-size: 28px; font-weight: bold; color: #1e293b; line-height: 1.2; }
+        .detail-age-unit { font-size: 18px; }
+        .detail-zodiac { font-size: 14px; color: #64748b; margin-top: 4px; }
+        .detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 20px 0; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+        .detail-grid-item { }
+        .detail-grid-label { font-size: 12px; color: #64748b; margin-bottom: 4px; }
+        .detail-grid-value { font-weight: 500; }
+        .detail-section { background: #f8fafc; border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+        .detail-section-title { font-weight: 600; font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .detail-list { margin-left: 20px; list-style: none; }
+        .detail-list li { margin-bottom: 8px; line-height: 1.4; }
+        .detail-list li strong { font-weight: 600; }
     </style>
 </head>
 <body>
@@ -511,7 +536,7 @@
             if (searchTerm !== "" && p.name && !p.name.toLowerCase().startsWith(searchTerm)) pass = false;
             if (pass) filtered.push(p);
         }
-        if (filtered.length === 0) { document.getElementById("tableBody").innerHTML = '<table><td colspan="22" class="loading">暂无数据</td多数'; return; }
+        if (filtered.length === 0) { document.getElementById("tableBody").innerHTML = '<tr><td colspan="22" class="loading">暂无数据</td</tr>'; return; }
         let sortType = document.getElementById("sortFilter") ? document.getElementById("sortFilter").value : "default";
         const today = new Date();
         const nineMonthsAgo = new Date(); nineMonthsAgo.setMonth(today.getMonth() - 9);
@@ -560,7 +585,7 @@
     function showProjectDetail(p) {
         let actors = [p.male1, p.female1, p.male2, p.female2].filter(x=>x&&x!=="").join(" / ");
         let posterUrl = getPosterUrl(p.poster);
-        let posterHtml = posterUrl ? "<img class='poster-image' src='" + h(posterUrl) + "' onclick='event.stopPropagation(); openImageModal(\"" + h(posterUrl) + "\")' onerror=\"this.onerror=null; this.parentElement.innerHTML='<div class=\\'poster-placeholder\\'>图片加载失败</div>'\">" : "<div class='poster-placeholder' onclick='event.stopPropagation();'>暂无海报</div>";
+        let posterHtml = posterUrl ? `<div class="detail-poster"><img class="poster-image" src="${h(posterUrl)}" onclick="event.stopPropagation(); openImageModal('${h(posterUrl)}')" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'poster-placeholder\\'>图片加载失败</div>'"></div>` : `<div class="detail-poster"><div class="poster-placeholder" onclick="event.stopPropagation();">暂无海报</div></div>`;
         let contributionBreakdown = getContributionScore(p, true);
         let contribution = contributionBreakdown.total;
         let awardsList = getProjectAwardsList(p);
@@ -586,7 +611,7 @@
                 } else { productionLine = `<div style="color:#64748b; font-size:11px;">后期制作：${productionDays}天</div>`; }
             }
         }
-        let detail = '<div class="poster-container">' + posterHtml + '<div class="poster-info"><div style="margin-bottom:8px;"><span class="level-badge ' + getLevelClass(p.level) + '">' + p.level + '级</span> <span class="status-badge ' + getStatusClass(getStatus(p)) + '">' + getStatus(p) + '</span></div><h3>' + h(p.name) + '</h3></div></div>';
+        
         let canUseYunhe = canInputYunhe(p.air_date);
         let breakdownHtml = '';
         if (getStatus(p) === "已播出") {
@@ -596,13 +621,54 @@
                 breakdownHtml = `<div class="score-breakdown">豆瓣加权 ${contributionBreakdown.douban.toFixed(2)} + 获奖加权 ${contributionBreakdown.award.toFixed(2)}</div>`;
             }
         }
-        detail += '<div class="detail-block"><strong>🎯 贡献分</strong> <span class="contribution-detail">' + contribution.toFixed(2) + '</span>' + breakdownHtml + '</div>';
-        detail += '<div class="detail-block"><strong>类型/集数</strong> ' + h(p.type || "-") + ' / ' + (p.episodes || "-") + '<br><strong>开机/杀青/播出</strong> ' + (p.start_date || "-") + ' / ' + (p.end_date || "-") + ' / ' + (p.air_date || "-") + shootingLine + productionLine + '</div>';
-        detail += '<div class="detail-block"><strong>网播平台</strong> ' + h(p.online_platform || "-") + '<br><strong>台播平台</strong> ' + h(p.tv_platform || "-") + '</div>';
-        detail += '<div class="detail-block"><strong>导演/编剧</strong> ' + h(p.director || "-") + ' / ' + h(p.writer || "-") + '<br><strong>主演</strong> ' + (actors || "-") + '</div>';
-        detail += '<div class="detail-block"><strong>出品/制作</strong> ' + h(p.studio || "-") + '<br><strong>总制片人</strong> ' + (p.producer || "-") + '<br><strong>制片人</strong> ' + (p.co_producer || "-") + '</div>';
-        detail += '<div class="detail-block"><strong>云合最高市占率</strong> ' + (p.yunhe_peak_share || "-") + '%<br><strong>云合集均V30</strong> ' + (p.yunhe_avg || "-") + '万<br><strong>豆瓣评分</strong> ' + (p.rating || "-") + ' (' + formatCount(p.rating_count) + ')<br><strong>原著</strong> ' + h(p.original || "-") + '</div>';
-        detail += '<div class="detail-block"><strong>🏆 获奖详情</strong><br>' + awardsText + '</div>';
+        
+        let detail = `
+        <div class="detail-header">
+            ${posterHtml}
+            <div class="detail-info">
+                <div class="detail-name">${h(p.name)}</div>
+                <div class="detail-stats">
+                    <div class="detail-stat-item">
+                        <div class="detail-stat-label">贡献分</div>
+                        <div class="detail-stat-value score">${contribution.toFixed(2)}</div>
+                        ${breakdownHtml}
+                    </div>
+                </div>
+                <div><span class="level-badge ${getLevelClass(p.level)}">${p.level}级</span> <span class="status-badge ${getStatusClass(getStatus(p))}">${getStatus(p)}</span></div>
+            </div>
+        </div>`;
+        
+        detail += `<div class="detail-section"><div class="detail-section-title">📋 基本信息</div>`;
+        detail += `<div><strong>类型/集数</strong> ${h(p.type || "-")} / ${p.episodes || "-"}</div>`;
+        detail += `<div><strong>开机/杀青/播出</strong> ${p.start_date || "-"} / ${p.end_date || "-"} / ${p.air_date || "-"}</div>`;
+        detail += shootingLine + productionLine;
+        detail += `</div>`;
+        
+        detail += `<div class="detail-section"><div class="detail-section-title">📺 播出信息</div>`;
+        detail += `<div><strong>网播平台</strong> ${h(p.online_platform || "-")}</div>`;
+        detail += `<div><strong>台播平台</strong> ${h(p.tv_platform || "-")}</div>`;
+        detail += `</div>`;
+        
+        detail += `<div class="detail-section"><div class="detail-section-title">👥 主创团队</div>`;
+        detail += `<div><strong>导演/编剧</strong> ${h(p.director || "-")} / ${h(p.writer || "-")}</div>`;
+        detail += `<div><strong>主演</strong> ${actors || "-"}</div>`;
+        detail += `</div>`;
+        
+        detail += `<div class="detail-section"><div class="detail-section-title">🏢 出品/制作</div>`;
+        detail += `<div><strong>出品/制作</strong> ${h(p.studio || "-")}</div>`;
+        detail += `<div><strong>总制片人</strong> ${p.producer || "-"}</div>`;
+        detail += `<div><strong>制片人</strong> ${p.co_producer || "-"}</div>`;
+        detail += `</div>`;
+        
+        detail += `<div class="detail-section"><div class="detail-section-title">📊 数据表现</div>`;
+        detail += `<div><strong>云合最高市占率</strong> ${p.yunhe_peak_share || "-"}%</div>`;
+        detail += `<div><strong>云合集均V30</strong> ${p.yunhe_avg || "-"}万</div>`;
+        detail += `<div><strong>豆瓣评分</strong> ${p.rating || "-"} (${formatCount(p.rating_count)})</div>`;
+        detail += `<div><strong>原著</strong> ${h(p.original || "-")}</div>`;
+        detail += `</div>`;
+        
+        detail += `<div class="detail-section"><div class="detail-section-title">🏆 获奖详情</div><div>${awardsText}</div></div>`;
+        
         document.getElementById("detailContent").innerHTML = detail;
         document.getElementById("editDetailBtn").onclick = function(){ closeDetail(); openEdit(p.id); };
         document.getElementById("deleteDetailBtn").onclick = function(){ if(confirm("删除《"+p.name+"》？")) deleteProject(p.id); };
@@ -824,7 +890,7 @@
             return true;
         });
         let tbody = document.getElementById("peopleTableBody");
-        if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="loading">暂无影人数据</td</tr>'; return; }
+        if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="loading">暂无影人数据</td</td>'; return; }
         let html = "";
         for (let p of filtered) {
             let ageText = '--';
@@ -876,145 +942,130 @@
         else { alert("保存成功"); document.getElementById("personEditModal").classList.remove("active"); await loadPeopleData(); showPersonDetail(currentPersonId); }
     }
     
-function showPersonDetail(personId) {
-    let person = peopleScores.find(p => p.id === personId);
-    if (!person) return;
-    
-    function calculateAgeAndBirth(birthDate) {
-        if (!birthDate) return { age: null, zodiac: null, formattedDate: null };
-        let year = 0, month = 0, day = 0;
-        if (birthDate.length === 8) {
-            year = parseInt(birthDate.substring(0,4));
-            month = parseInt(birthDate.substring(4,6));
-            day = parseInt(birthDate.substring(6,8));
+    function showPersonDetail(personId) {
+        let person = peopleScores.find(p => p.id === personId);
+        if (!person) return;
+        
+        function calculateAgeAndBirth(birthDate) {
+            if (!birthDate) return { age: null, zodiac: null, formattedDate: null };
+            let year = 0, month = 0, day = 0;
+            if (birthDate.length === 8) {
+                year = parseInt(birthDate.substring(0,4));
+                month = parseInt(birthDate.substring(4,6));
+                day = parseInt(birthDate.substring(6,8));
+            } else {
+                let parts = birthDate.split('-');
+                if (parts.length >= 1) year = parseInt(parts[0]);
+                if (parts.length >= 2) month = parseInt(parts[1]);
+                if (parts.length >= 3) day = parseInt(parts[2]);
+            }
+            if (isNaN(year) || year === 0) return { age: null, zodiac: null, formattedDate: null };
+            let today = new Date();
+            let age = today.getFullYear() - year;
+            let monthDiff = today.getMonth() - (month - 1);
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < day)) age--;
+            let zodiac = "";
+            if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) zodiac = "水瓶座";
+            else if ((month === 2 && day >= 19) || (month === 3 && day <= 20)) zodiac = "双鱼座";
+            else if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) zodiac = "白羊座";
+            else if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) zodiac = "金牛座";
+            else if ((month === 5 && day >= 21) || (month === 6 && day <= 20)) zodiac = "双子座";
+            else if ((month === 6 && day >= 21) || (month === 7 && day <= 22)) zodiac = "巨蟹座";
+            else if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) zodiac = "狮子座";
+            else if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) zodiac = "处女座";
+            else if ((month === 9 && day >= 23) || (month === 10 && day <= 22)) zodiac = "天秤座";
+            else if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) zodiac = "天蝎座";
+            else if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) zodiac = "射手座";
+            else zodiac = "摩羯座";
+            let formattedDate = birthDate.length === 8 ? `${year}年${month}月${day}日` : birthDate;
+            return { age: age, zodiac: zodiac, formattedDate: formattedDate };
+        }
+        
+        let ageInfo = calculateAgeAndBirth(person.birth_date);
+        
+        // 影人照片 - 尺寸调整为 140x187
+        let photoHtml = '';
+        if (person.photo && person.photo.trim() && person.photo !== "null") {
+            let photoUrl = person.photo.startsWith('http') ? person.photo : CLOUDINARY_BASE_URL + person.photo;
+            let safeUrl = photoUrl.replace(/'/g, "\\'");
+            photoHtml = `
+            <div class="detail-poster"><div style="width:140px; height:187px; border-radius:12px; overflow:hidden; background:#f1f5f9; box-shadow:0 4px 12px rgba(0,0,0,0.1); flex-shrink:0;">
+                <img src="${h(safeUrl)}" style="width:100%; height:100%; object-fit:cover; cursor:pointer;" onclick="openImageModal('${safeUrl}')" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#94a3b8;>📷</div>'">
+            </div></div>`;
         } else {
-            let parts = birthDate.split('-');
-            if (parts.length >= 1) year = parseInt(parts[0]);
-            if (parts.length >= 2) month = parseInt(parts[1]);
-            if (parts.length >= 3) day = parseInt(parts[2]);
+            photoHtml = `<div class="detail-poster"><div style="width:140px; height:187px; background:#f1f5f9; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#94a3b8; flex-shrink:0;">📷 暂无照片</div></div>`;
         }
-        if (isNaN(year) || year === 0) return { age: null, zodiac: null, formattedDate: null };
-        let today = new Date();
-        let age = today.getFullYear() - year;
-        let monthDiff = today.getMonth() - (month - 1);
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < day)) age--;
-        let zodiac = "";
-        if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) zodiac = "水瓶座";
-        else if ((month === 2 && day >= 19) || (month === 3 && day <= 20)) zodiac = "双鱼座";
-        else if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) zodiac = "白羊座";
-        else if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) zodiac = "金牛座";
-        else if ((month === 5 && day >= 21) || (month === 6 && day <= 20)) zodiac = "双子座";
-        else if ((month === 6 && day >= 21) || (month === 7 && day <= 22)) zodiac = "巨蟹座";
-        else if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) zodiac = "狮子座";
-        else if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) zodiac = "处女座";
-        else if ((month === 9 && day >= 23) || (month === 10 && day <= 22)) zodiac = "天秤座";
-        else if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) zodiac = "天蝎座";
-        else if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) zodiac = "射手座";
-        else zodiac = "摩羯座";
-        let formattedDate = birthDate.length === 8 ? `${year}年${month}月${day}日` : birthDate;
-        return { age: age, zodiac: zodiac, formattedDate: formattedDate };
-    }
-    
-    let ageInfo = calculateAgeAndBirth(person.birth_date);
-    
-    // ====================== 修复区域：照片 HTML ======================
-    let photoHtml = '';
-    if (person.photo && person.photo.trim() && person.photo !== "null") {
-        let photoUrl = person.photo.startsWith('http') ? person.photo : CLOUDINARY_BASE_URL + person.photo;
-
-        // 修复 1：只转义单引号，不要手动转义 HTML 实体
-        let safeUrl = photoUrl.replace(/'/g, "\\'");
-
-        // 修复 2：使用反引号 `` 简化字符串，彻底消灭转义混乱
-        photoHtml = `
-        <div style="width:120px; height:160px; border-radius:12px; overflow:hidden; background:#f1f5f9; box-shadow:0 4px 12px rgba(0,0,0,0.1); flex-shrink:0;">
-            <img src="${h(safeUrl)}" 
-                 style="width:100%; height:100%; object-fit:cover; cursor:pointer;" 
-                 onclick="openImageModal('${safeUrl}')" 
-                 onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#94a3b8;>📷</div>'">
-        </div>`;
-    } else {
-        photoHtml = `<div style="width:120px; height:160px; background:#f1f5f9; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#94a3b8; flex-shrink:0;">📷 暂无照片</div>`;
-    }
-    
-    let ageDisplay = '';
-    if (ageInfo.age) {
-        ageDisplay = `<div style="margin-top: 16px;">
-            <div style="font-size:36px; font-weight:bold; color:#1e293b; line-height:1.2;">${ageInfo.age}<span style="font-size:20px;">岁</span></div>`;
-        if (ageInfo.zodiac) ageDisplay += `<div style="font-size:16px; color:#64748b; margin-top:4px;">${ageInfo.zodiac}</div>`;
-        ageDisplay += '</div>';
-    }
-    
-    let detailItems = [];
-    if (ageInfo.formattedDate) detailItems.push(`<div><div style="font-size:12px; color:#64748b;">出生日期</div><div style="font-weight:500;">${h(ageInfo.formattedDate)}</div></div>`);
-    if (person.height) detailItems.push(`<div><div style="font-size:12px; color:#64748b;">身高</div><div style="font-weight:500;">${h(person.height)}</div></div>`);
-    if (person.hometown) detailItems.push(`<div><div style="font-size:12px; color:#64748b;">籍贯</div><div style="font-weight:500;">${h(person.hometown)}</div></div>`);
-    if (person.school) detailItems.push(`<div><div style="font-size:12px; color:#64748b;">毕业院校</div><div style="font-weight:500;">${h(person.school)}</div></div>`);
-    
-    let detailInfoHtml = '';
-    if (detailItems.length > 0) {
-        detailInfoHtml = `<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0;">${detailItems.join('')}</div>`;
-    }
-    
-    let scoreBreakdownHtml = `<div style="font-size:12px; color:#64748b; margin-top:8px;">已播项目 ${(person.airedScore || 0).toFixed(2)} + 待播项目 ${(person.pendingScore || 0).toFixed(2)} + 个人获奖 ${(person.awardBonus || 0).toFixed(2)}</div>`;
-    
-    let worksHtml = '';
-    if (person.works.length) {
-        worksHtml += `<div class="detail-block" style="margin-top:16px;"><strong>🏆 已播出代表作</strong><ul style="margin-left:20px; margin-top:8px;">`;
-        for (let w of person.works) {
-            worksHtml += `<li><strong>${h(w.name)}</strong>（${w.role}，豆瓣 ${w.rating}，云合 ${w.yunhe_share || '-'}%，贡献 ${w.contribution.toFixed(2)}分）${w.year ? ' · ' + w.year : ''}</li>`;
+        
+        let scoreBreakdownHtml = `<div class="score-breakdown">已播项目 ${(person.airedScore || 0).toFixed(2)} + 待播项目 ${(person.pendingScore || 0).toFixed(2)} + 个人获奖 ${(person.awardBonus || 0).toFixed(2)}</div>`;
+        
+        let detailItems = [];
+        if (ageInfo.formattedDate) detailItems.push(`<div class="detail-grid-item"><div class="detail-grid-label">出生日期</div><div class="detail-grid-value">${h(ageInfo.formattedDate)}</div></div>`);
+        if (person.height) detailItems.push(`<div class="detail-grid-item"><div class="detail-grid-label">身高</div><div class="detail-grid-value">${h(person.height)}</div></div>`);
+        if (person.hometown) detailItems.push(`<div class="detail-grid-item"><div class="detail-grid-label">籍贯</div><div class="detail-grid-value">${h(person.hometown)}</div></div>`);
+        if (person.school) detailItems.push(`<div class="detail-grid-item"><div class="detail-grid-label">毕业院校</div><div class="detail-grid-value">${h(person.school)}</div></div>`);
+        
+        let detailInfoHtml = '';
+        if (detailItems.length > 0) {
+            detailInfoHtml = `<div class="detail-grid">${detailItems.join('')}</div>`;
         }
-        worksHtml += '</ul></div>';
-    }
-    if (person.pendingWorks.length) {
-        worksHtml += `<div class="detail-block"><strong>⏳ 未播出项目</strong><ul style="margin-left:20px; margin-top:8px;">`;
-        for (let w of person.pendingWorks) {
-            let statusText = w.status==='已杀青' ? '✅ 已杀青' : w.status==='已开机' ? '🎥 拍摄中' : '📝 筹备中';
-            worksHtml += `<li><strong>${h(w.name)}</strong>（${w.role}，${statusText}，贡献 ${w.contribution.toFixed(2)}分）</li>`;
+        
+        let worksHtml = '';
+        if (person.works.length) {
+            worksHtml += `<div class="detail-section"><div class="detail-section-title">🏆 已播出代表作</div><ul class="detail-list">`;
+            for (let w of person.works) {
+                worksHtml += `<li><strong>${h(w.name)}</strong>（${w.role}，豆瓣 ${w.rating}，云合 ${w.yunhe_share || '-'}%，贡献 ${w.contribution.toFixed(2)}分）${w.year ? ' · ' + w.year : ''}</li>`;
+            }
+            worksHtml += `</ul></div>`;
         }
-        worksHtml += '</ul></div>';
-    }
-    
-    const awardsList = getPersonalAwardsList(person);
-    let awardsText = awardsList.length > 0 ? awardsList.map(a => { 
-        const name = PERSONAL_AWARD_NAMES[a.type] || a.type;
-        const year = a.year ? '（' + a.year + '）' : '';
-        const work = a.work ? '《' + a.work + '》' : '';
-        return name + year + work;
-    }).join('；') : '暂无获奖信息';
-    let awardsHtml = `<div class="detail-block"><strong>🎖️ 主要获奖</strong><div style="margin-top:8px;">${h(awardsText)}</div></div>`;
-    
-    let otherInfoHtml = person.other_info ? `<div class="detail-block"><strong>ℹ️ 其他信息</strong><div style="margin-top:8px;">${h(person.other_info).replace(/\n/g,'<br>')}</div></div>` : '';
-    
-    let detailHtml = `
-    <div style="display: flex; gap: 20px; margin-bottom: 24px; align-items: flex-start;">
-        ${photoHtml}
-        <div style="flex: 1;">
-            <h2 style="font-size: 28px; font-weight: bold; color: #1e293b; margin: 0 0 16px 0;">${h(person.name)}</h2>
-            <div style="display: flex; gap: 32px; margin-bottom: 8px;">
-                <div>
-                    <div style="font-size: 12px; color: #64748b;">综合得分</div>
-                    <div style="font-size: 32px; font-weight: bold; color: #f59e0b;">${person.totalScore.toFixed(2)}</div>
-                    ${scoreBreakdownHtml}
+        if (person.pendingWorks.length) {
+            worksHtml += `<div class="detail-section"><div class="detail-section-title">⏳ 未播出项目</div><ul class="detail-list">`;
+            for (let w of person.pendingWorks) {
+                let statusText = w.status === '已杀青' ? '✅ 已杀青' : (w.status === '已开机' ? '🎥 拍摄中' : '📝 筹备中');
+                worksHtml += `<li><strong>${h(w.name)}</strong>（${w.role}，${statusText}，贡献 ${w.contribution.toFixed(2)}分）</li>`;
+            }
+            worksHtml += `</ul></div>`;
+        }
+        
+        const awardsList = getPersonalAwardsList(person);
+        let awardsText = awardsList.length > 0 ? awardsList.map(a => {
+            const name = PERSONAL_AWARD_NAMES[a.type] || a.type;
+            const year = a.year ? '（' + a.year + '）' : '';
+            const work = a.work ? '《' + a.work + '》' : '';
+            return name + year + work;
+        }).join('；') : '暂无获奖信息';
+        let awardsHtml = `<div class="detail-section"><div class="detail-section-title">🎖️ 主要获奖</div><div>${h(awardsText)}</div></div>`;
+        
+        let otherInfoHtml = person.other_info ? `<div class="detail-section"><div class="detail-section-title">ℹ️ 其他信息</div><div>${h(person.other_info).replace(/\n/g, '<br>')}</div></div>` : '';
+        
+        let detailHtml = `
+        <div class="detail-header">
+            ${photoHtml}
+            <div class="detail-info">
+                <div class="detail-name">${h(person.name)}</div>
+                <div class="detail-stats">
+                    <div class="detail-stat-item">
+                        <div class="detail-stat-label">综合得分</div>
+                        <div class="detail-stat-value score">${person.totalScore.toFixed(2)}</div>
+                        ${scoreBreakdownHtml}
+                    </div>
+                    <div class="detail-stat-item">
+                        <div class="detail-stat-label">参与作品数</div>
+                        <div class="detail-stat-value count">${person.worksCount}</div>
+                    </div>
                 </div>
-                <div>
-                    <div style="font-size: 12px; color: #64748b;">参与作品数</div>
-                    <div style="font-size: 32px; font-weight: bold; color: #1e293b;">${person.worksCount}</div>
-                </div>
+                ${ageInfo.age ? `<div class="detail-age-section"><div class="detail-age">${ageInfo.age}<span class="detail-age-unit">岁</span></div>${ageInfo.zodiac ? `<div class="detail-zodiac">${ageInfo.zodiac}</div>` : ''}</div>` : ''}
             </div>
-            ${ageDisplay}
         </div>
-    </div>
-    ${detailInfoHtml}
-    ${worksHtml}
-    ${awardsHtml}
-    ${otherInfoHtml}`;
-    
-    document.getElementById("personDetailContent").innerHTML = detailHtml;
-    document.getElementById("editPersonFromDetailBtn").onclick = function(){ closePersonDetail(); openPersonEdit(person.id); };
-    document.getElementById("deletePersonBtn").onclick = function(){ if (confirm("删除影人《" + person.name + "》？")) deletePerson(person.id); };
-    document.getElementById("personDetailModal").classList.add("active");
-}
+        ${detailInfoHtml}
+        ${worksHtml}
+        ${awardsHtml}
+        ${otherInfoHtml}`;
+        
+        document.getElementById("personDetailContent").innerHTML = detailHtml;
+        document.getElementById("editPersonFromDetailBtn").onclick = function(){ closePersonDetail(); openPersonEdit(person.id); };
+        document.getElementById("deletePersonBtn").onclick = function(){ if (confirm("删除影人《" + person.name + "》？")) deletePerson(person.id); };
+        document.getElementById("personDetailModal").classList.add("active");
+    }
     
     async function deletePerson(id) { let { error } = await client.from("people").delete().eq("id", id); if (error) alert("删除失败: " + error.message); else { await loadPeopleData(); closePersonDetail(); } }
     function closePersonDetail() { document.getElementById("personDetailModal").classList.remove("active"); }
