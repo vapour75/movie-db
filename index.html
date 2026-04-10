@@ -915,35 +915,6 @@
         for (let row of rows) { const id = parseInt(row.getAttribute("data-person-id")); row.onclick = function() { if (isLongPressTriggered) return; showPersonDetail(id); }; bindLongPress(row, (x,y) => showActionMenu(x,y,{type:'person',id:id})); }
     }
     
-    function openPersonEdit(personId) {
-        let person = peopleScores.find(p => p.id === personId);
-        if (!person) return;
-        currentPersonId = personId;
-        document.getElementById("personName").value = person.name;
-        document.getElementById("personGender").value = person.gender || "";
-        document.getElementById("personBirthDate").value = person.birth_date || "";
-        document.getElementById("personHeight").value = person.height || "";
-        document.getElementById("personHometown").value = person.hometown || "";
-        document.getElementById("personSchool").value = person.school || "";
-        document.getElementById("personOtherInfo").value = person.other_info || "";
-        updateAwardTypeSelect(person.gender || "");
-        const awardsList = getPersonalAwardsList(person);
-        loadPersonalAwardsToMemory(awardsList);
-        currentPersonPhotoFile = person.photo || null;
-        const previewContainer = document.getElementById('personImagePreview');
-        if (previewContainer) { previewContainer.innerHTML = ''; if (person.photo) { let photoUrl = person.photo.startsWith('http') ? person.photo : CLOUDINARY_BASE_URL + person.photo; let previewDiv = document.createElement('div'); previewDiv.className = 'preview-item'; previewDiv.innerHTML = `<img src="${photoUrl}" style="width:100%; height:100%; object-fit:cover;" onclick="openImageModal('${photoUrl}')">`; previewContainer.appendChild(previewDiv); } }
-        document.getElementById("personEditModal").classList.add("active");
-        setTimeout(() => initPersonImageUpload(), 100);
-    }
-    
-    async function savePersonInfo() {
-        const personalAwardsJson = JSON.stringify(tempPersonalAwards);
-        let updateData = { gender: document.getElementById("personGender").value, birth_date: document.getElementById("personBirthDate").value, height: document.getElementById("personHeight").value, hometown: document.getElementById("personHometown").value, school: document.getElementById("personSchool").value, awards: personalAwardsJson, other_info: document.getElementById("personOtherInfo").value, photo: currentPersonPhotoFile || null };
-        let { error } = await client.from("people").update(updateData).eq("id", currentPersonId);
-        if (error) alert("保存失败: " + error.message);
-        else { alert("保存成功"); document.getElementById("personEditModal").classList.remove("active"); await loadPeopleData(); showPersonDetail(currentPersonId); }
-    }
-    
 function showPersonDetail(personId) {
     let person = peopleScores.find(p => p.id === personId);
     if (!person) return;
@@ -979,117 +950,64 @@ function showPersonDetail(personId) {
         else if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) zodiac = "天蝎座";
         else if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) zodiac = "射手座";
         else zodiac = "摩羯座";
-        let formattedDate = birthDate.length === 8 ? `${year}.${month}.${day}` : birthDate.replace(/-/g, '.');
+        let formattedDate = birthDate.length === 8 ? `${year}年${month}月${day}日` : birthDate;
         return { age: age, zodiac: zodiac, formattedDate: formattedDate };
     }
     
     let ageInfo = calculateAgeAndBirth(person.birth_date);
     
-    // 照片区域 - 保留原来海报样式
+    // 照片区域
     let photoHtml = '';
     if (person.photo && person.photo.trim() && person.photo !== "null") {
         let photoUrl = person.photo.startsWith('http') ? person.photo : CLOUDINARY_BASE_URL + person.photo;
         let safeUrl = photoUrl.replace(/'/g, "\\'");
         photoHtml = `
-        <div style="width:160px; height:213px; border-radius:12px; overflow:hidden; background:#f1f5f9; box-shadow:0 8px 20px rgba(0,0,0,0.12);">
+        <div style="width:120px; height:160px; border-radius:12px; overflow:hidden; background:#f1f5f9; box-shadow:0 4px 12px rgba(0,0,0,0.1); flex-shrink:0;">
             <img src="${h(safeUrl)}" style="width:100%; height:100%; object-fit:cover; cursor:pointer;" onclick="openImageModal('${safeUrl}')" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#94a3b8;>📷</div>'">
         </div>`;
     } else {
-        photoHtml = `<div style="width:160px; height:213px; border-radius:12px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#94a3b8; box-shadow:0 4px 12px rgba(0,0,0,0.05);">📷 暂无照片</div>`;
+        photoHtml = `<div style="width:120px; height:160px; background:#f1f5f9; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#94a3b8; flex-shrink:0;">📷 暂无照片</div>`;
     }
     
-    // 信息卡片通用样式
-    let cardStyle = "background: #f8fafc; border-radius: 16px; padding: 12px 16px; min-width: 100px; text-align: center;";
+    // 得分构成
+    let scoreBreakdownHtml = `<div style="font-size:12px; color:#64748b; margin-top:8px;">已播项目 ${(person.airedScore || 0).toFixed(2)} + 待播项目 ${(person.pendingScore || 0).toFixed(2)} + 个人获奖 ${(person.awardBonus || 0).toFixed(2)}</div>`;
     
-    // 参与作品数卡片
-    let worksCountCard = `
-    <div style="${cardStyle}">
-        <div style="font-size: 12px; color: #64748b;">参与作品数</div>
-        <div style="font-size: 24px; font-weight: 700; color: #0f172a;">${person.worksCount}</div>
-    </div>`;
-    
-    // 已播、待播、获奖卡片（四行中的后三行）
-    let airedCard = `
-    <div style="${cardStyle}">
-        <div style="font-size: 12px; color: #64748b;">已播项目</div>
-        <div style="font-size: 18px; font-weight: 600; color: #0f172a;">${(person.airedScore || 0).toFixed(2)}</div>
-    </div>`;
-    
-    let pendingCard = `
-    <div style="${cardStyle}">
-        <div style="font-size: 12px; color: #64748b;">待播项目</div>
-        <div style="font-size: 18px; font-weight: 600; color: #0f172a;">${(person.pendingScore || 0).toFixed(2)}</div>
-    </div>`;
-    
-    let awardCard = `
-    <div style="${cardStyle}">
-        <div style="font-size: 12px; color: #64748b;">个人获奖</div>
-        <div style="font-size: 18px; font-weight: 600; color: #0f172a;">${(person.awardBonus || 0).toFixed(2)}</div>
-    </div>`;
-    
-    // 出生日期卡片
-    let birthDateCard = '';
-    if (ageInfo.formattedDate) {
-        birthDateCard = `
-        <div style="${cardStyle}">
-            <div style="font-size: 12px; color: #64748b;">出生日期</div>
-            <div style="font-size: 16px; font-weight: 500; color: #0f172a;">${h(ageInfo.formattedDate)}</div>
-        </div>`;
-    }
-    
-    // 年龄卡片
-    let ageCard = '';
+    // 年龄星座显示
+    let ageDisplay = '';
     if (ageInfo.age) {
-        ageCard = `
-        <div style="${cardStyle}">
-            <div style="font-size: 12px; color: #64748b;">年龄</div>
-            <div style="font-size: 18px; font-weight: 600; color: #0f172a;">${ageInfo.age}岁</div>
-        </div>`;
+        ageDisplay = `<div style="margin-top: 16px;"><div style="font-size:28px; font-weight:bold; color:#1e293b; line-height:1.2;">${ageInfo.age}<span style="font-size:16px;">岁</span>`;
+        if (ageInfo.zodiac) ageDisplay += ` <span style="font-size:16px; color:#64748b;">· ${ageInfo.zodiac}</span>`;
+        ageDisplay += `</div></div>`;
     }
     
-    // 星座卡片
-    let zodiacCard = '';
-    if (ageInfo.zodiac) {
-        zodiacCard = `
-        <div style="${cardStyle}">
-            <div style="font-size: 12px; color: #64748b;">星座</div>
-            <div style="font-size: 16px; font-weight: 500; color: #0f172a;">${ageInfo.zodiac}</div>
-        </div>`;
+    // 详细信息（出生日期、身高、籍贯、毕业院校）
+    let detailItems = [];
+    if (ageInfo.formattedDate) detailItems.push(`<div><div style="font-size:12px; color:#64748b;">出生日期</div><div style="font-weight:500;">${h(ageInfo.formattedDate)}</div></div>`);
+    if (person.height) detailItems.push(`<div><div style="font-size:12px; color:#64748b;">身高</div><div style="font-weight:500;">${h(person.height)}</div></div>`);
+    if (person.hometown) detailItems.push(`<div><div style="font-size:12px; color:#64748b;">籍贯</div><div style="font-weight:500;">${h(person.hometown)}</div></div>`);
+    if (person.school) detailItems.push(`<div><div style="font-size:12px; color:#64748b;">毕业院校</div><div style="font-weight:500;">${h(person.school)}</div></div>`);
+    
+    let detailInfoHtml = '';
+    if (detailItems.length > 0) {
+        detailInfoHtml = `<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 20px 0; padding-top: 16px; border-top: 1px solid #e2e8f0;">${detailItems.join('')}</div>`;
     }
-    
-    // 其他信息卡片（身高、籍贯、毕业院校）
-    let infoCards = [];
-    if (person.height) infoCards.push(`<div style="${cardStyle}"><div style="font-size: 12px; color: #64748b;">身高</div><div style="font-size: 16px; font-weight: 500; color: #0f172a;">${h(person.height)}</div></div>`);
-    if (person.hometown) infoCards.push(`<div style="${cardStyle}"><div style="font-size: 12px; color: #64748b;">籍贯</div><div style="font-size: 16px; font-weight: 500; color: #0f172a;">${h(person.hometown)}</div></div>`);
-    if (person.school) infoCards.push(`<div style="${cardStyle}"><div style="font-size: 12px; color: #64748b;">毕业院校</div><div style="font-size: 16px; font-weight: 500; color: #0f172a;">${h(person.school)}</div></div>`);
-    
-    // 综合得分卡片（放在姓名下方右侧，加大留白）
-    let scoreCard = `
-    <div style="${cardStyle}">
-        <div style="font-size: 12px; color: #64748b;">综合得分</div>
-        <div style="font-size: 28px; font-weight: 700; color: #f59e0b;">${person.totalScore.toFixed(2)}</div>
-    </div>`;
     
     // 已播出代表作
     let worksHtml = '';
     if (person.works.length) {
-        worksHtml += `<div style="background: white; border-radius: 20px; border: 1px solid #edf2f7; overflow: hidden; margin-bottom: 20px;">
-            <div style="padding: 14px 18px; background: #fafcff; border-bottom: 1px solid #edf2f7; font-weight: 600; font-size: 15px;">🏆 已播出代表作</div>
-            <ul style="list-style: none; padding: 8px 0;">`;
+        worksHtml += `<div class="detail-section"><div class="detail-section-title">🏆 已播出代表作</div><ul class="detail-list">`;
         for (let w of person.works) {
-            worksHtml += `<li style="padding: 10px 18px; border-bottom: 1px solid #f1f5f9; font-size: 14px;"><strong>${h(w.name)}</strong>（${w.role}，豆瓣 ${w.rating}，云合 ${w.yunhe_share || '-'}%，贡献 ${w.contribution.toFixed(2)}分）${w.year ? ' · ' + w.year : ''}</li>`;
+            worksHtml += `<li><strong>${h(w.name)}</strong>（${w.role}，豆瓣 ${w.rating}，云合 ${w.yunhe_share || '-'}%，贡献 ${w.contribution.toFixed(2)}分）${w.year ? ' · ' + w.year : ''}</li>`;
         }
         worksHtml += `</ul></div>`;
     }
     
     // 未播出项目
     if (person.pendingWorks.length) {
-        worksHtml += `<div style="background: white; border-radius: 20px; border: 1px solid #edf2f7; overflow: hidden; margin-bottom: 20px;">
-            <div style="padding: 14px 18px; background: #fafcff; border-bottom: 1px solid #edf2f7; font-weight: 600; font-size: 15px;">⏳ 未播出项目</div>
-            <ul style="list-style: none; padding: 8px 0;">`;
+        worksHtml += `<div class="detail-section"><div class="detail-section-title">⏳ 未播出项目</div><ul class="detail-list">`;
         for (let w of person.pendingWorks) {
             let statusText = w.status === '已杀青' ? '✅ 已杀青' : (w.status === '已开机' ? '🎥 拍摄中' : '📝 筹备中');
-            worksHtml += `<li style="padding: 10px 18px; border-bottom: 1px solid #f1f5f9; font-size: 14px;"><strong>${h(w.name)}</strong>（${w.role}，${statusText}，贡献 ${w.contribution.toFixed(2)}分）</li>`;
+            worksHtml += `<li><strong>${h(w.name)}</strong>（${w.role}，${statusText}，贡献 ${w.contribution.toFixed(2)}分）</li>`;
         }
         worksHtml += `</ul></div>`;
     }
@@ -1100,58 +1018,37 @@ function showPersonDetail(personId) {
         const name = PERSONAL_AWARD_NAMES[a.type] || a.type;
         const year = a.year ? '（' + a.year + '）' : '';
         const work = a.work ? '《' + a.work + '》' : '';
-        return `${name}${year}${work}`;
+        return name + year + work;
     }).join('；') : '暂无获奖信息';
-    let awardsHtml = `<div style="background: white; border-radius: 20px; border: 1px solid #edf2f7; padding: 16px 18px; margin-bottom: 20px;">
-        <div style="font-weight: 600; font-size: 15px; margin-bottom: 10px;">🎖️ 主要获奖</div>
-        <div style="font-size: 14px; line-height: 1.5;">${h(awardsText)}</div>
-    </div>`;
+    let awardsHtml = `<div class="detail-section"><div class="detail-section-title">🎖️ 主要获奖</div><div>${h(awardsText)}</div></div>`;
     
     // 其他信息
-    let otherInfoHtml = person.other_info ? `<div style="background: white; border-radius: 20px; border: 1px solid #edf2f7; padding: 16px 18px;">
-        <div style="font-weight: 600; font-size: 15px; margin-bottom: 10px;">ℹ️ 其他信息</div>
-        <div style="font-size: 14px; line-height: 1.5;">${h(person.other_info).replace(/\n/g, '<br>')}</div>
-    </div>` : '';
+    let otherInfoHtml = person.other_info ? `<div class="detail-section"><div class="detail-section-title">ℹ️ 其他信息</div><div>${h(person.other_info).replace(/\n/g, '<br>')}</div></div>` : '';
     
-    // 四行卡片：参与作品数 + 已播 + 待播 + 获奖
-    let fourCardsRow = `
-    <div style="display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0;">
-        ${worksCountCard}
-        ${airedCard}
-        ${pendingCard}
-        ${awardCard}
-    </div>`;
-    
-    // 个人信息卡片行：出生日期、年龄、星座、身高、籍贯、毕业院校
-    let personalCards = [];
-    if (birthDateCard) personalCards.push(birthDateCard);
-    if (ageCard) personalCards.push(ageCard);
-    if (zodiacCard) personalCards.push(zodiacCard);
-    personalCards.push(...infoCards);
-    
-    let personalCardsHtml = '';
-    if (personalCards.length > 0) {
-        personalCardsHtml = `<div style="display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0;">${personalCards.join('')}</div>`;
-    }
-    
-    // 主布局
+    // 主布局 - 回归最初简洁版本
     let detailHtml = `
-    <div style="padding: 4px 0;">
-        <div style="display: flex; gap: 28px; margin-bottom: 20px; flex-wrap: wrap; align-items: flex-start;">
-            <div>
-                ${photoHtml}
-                <div style="font-size: 20px; font-weight: bold; color: #0f172a; margin-top: 12px; text-align: center;">${h(person.name)}</div>
+    <div style="display: flex; gap: 24px; margin-bottom: 24px; flex-wrap: wrap; align-items: flex-start;">
+        ${photoHtml}
+        <div style="flex: 1; min-width: 200px;">
+            <div style="font-size: 28px; font-weight: bold; color: #1e293b; margin-bottom: 16px;">${h(person.name)}</div>
+            <div style="display: flex; gap: 32px; margin-bottom: 8px; flex-wrap: wrap;">
+                <div>
+                    <div style="font-size: 12px; color: #64748b;">综合得分</div>
+                    <div style="font-size: 32px; font-weight: bold; color: #f59e0b;">${person.totalScore.toFixed(2)}</div>
+                    ${scoreBreakdownHtml}
+                </div>
+                <div>
+                    <div style="font-size: 12px; color: #64748b;">参与作品数</div>
+                    <div style="font-size: 32px; font-weight: bold; color: #1e293b;">${person.worksCount}</div>
+                </div>
             </div>
-            <div style="flex: 1; min-width: 160px;">
-                ${scoreCard}
-            </div>
+            ${ageDisplay}
         </div>
-        ${fourCardsRow}
-        ${personalCardsHtml}
-        ${worksHtml}
-        ${awardsHtml}
-        ${otherInfoHtml}
-    </div>`;
+    </div>
+    ${detailInfoHtml}
+    ${worksHtml}
+    ${awardsHtml}
+    ${otherInfoHtml}`;
     
     document.getElementById("personDetailContent").innerHTML = detailHtml;
     document.getElementById("editPersonFromDetailBtn").onclick = function(){ closePersonDetail(); openPersonEdit(person.id); };
